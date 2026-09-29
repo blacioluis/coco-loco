@@ -1,8 +1,9 @@
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 
 const SOURCE_URL = 'https://www.calabssa.be/c/152_1_forestois_sc/';
 const OUTPUT = new URL('../src/app/infrastructure/initial-fixtures.ts', import.meta.url);
 const STANDINGS_OUTPUT = new URL('../src/app/infrastructure/initial-standings.ts', import.meta.url);
+const RUNTIME_OUTPUT = new URL('../public/data/calabssa.json', import.meta.url);
 
 const response = await fetch(SOURCE_URL, { headers: { 'user-agent': 'Forestois-SC-calendar-import/1.0' } });
 if (!response.ok) throw new Error(`CalABSSA a répondu ${response.status}`);
@@ -38,6 +39,8 @@ const standingsOutput = `import { StandingRow } from '../domain/club.models';\n\
   `export const STANDINGS_UPDATED_AT = ${JSON.stringify(updatedAt)};\n\n` +
   `export const INITIAL_STANDINGS: StandingRow[] = ${JSON.stringify(cleanStandings, null, 2)};\n`;
 await writeFile(STANDINGS_OUTPUT, standingsOutput, 'utf8');
+await mkdir(new URL('../public/data/', import.meta.url), { recursive: true });
+await writeFile(RUNTIME_OUTPUT, JSON.stringify({ updatedAt, fixtures, standings: cleanStandings }, null, 2) + '\n', 'utf8');
 console.log(`Calendrier et classement CalABSSA importés : ${fixtures.length} rencontres, ${standings.length} équipes (${updatedAt}).`);
 
 function readJsonArray(value, offset) {
@@ -62,7 +65,7 @@ function toFixture(event) {
   const location = String(event.location ?? '').split(',').map((part) => part.trim());
   const hasVenueName = !/^(rue|avenue|av\.|boulevard|chaussée)/i.test(location[0] ?? '');
   const venue = hasVenueName ? location.shift() : 'Nom du terrain à confirmer';
-  const code = /Code terrain:\s*([^\\n]+)/.exec(event.description ?? '')?.[1]?.trim() ?? 'À confirmer';
+  const code = /Code terrain:\s*([^\r\n]+)/.exec(event.description ?? '')?.[1]?.trim() ?? 'À confirmer';
   const kickoff = toBrusselsDateTime(event.dtstart);
   return {
     round: Number(event.dayNumber),

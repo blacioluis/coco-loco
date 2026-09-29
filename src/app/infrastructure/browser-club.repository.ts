@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ClubSnapshot } from '../domain/club.models';
+import { ClubSnapshot, SportsDataSnapshot } from '../domain/club.models';
 import { ClubRepository } from '../domain/club.repository';
 import { FIXTURES_UPDATED_AT, INITIAL_FIXTURES } from './initial-fixtures';
 import { INITIAL_MEMBERS } from './initial-members';
@@ -25,9 +25,31 @@ export class BrowserClubRepository extends ClubRepository {
     return { members, fixtures: INITIAL_FIXTURES, fixturesUpdatedAt: FIXTURES_UPDATED_AT, standings: INITIAL_STANDINGS, standingsUpdatedAt: STANDINGS_UPDATED_AT };
   }
 
+  async loadSportsData(): Promise<SportsDataSnapshot | null> {
+    try {
+      const url = new URL('data/calabssa.json', document.baseURI);
+      const response = await fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } });
+      if (!response.ok) return null;
+      const data = await response.json() as Partial<SportsDataSnapshot>;
+      if (!isSportsData(data)) return null;
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
   saveMembers(members: ClubSnapshot['members']): void {
     localStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
   }
+}
+
+function isSportsData(value: Partial<SportsDataSnapshot>): value is SportsDataSnapshot {
+  return typeof value.updatedAt === 'string'
+    && Array.isArray(value.fixtures)
+    && value.fixtures.length >= 1
+    && value.fixtures.every((fixture) => typeof fixture?.round === 'number' && typeof fixture?.date === 'string' && typeof fixture?.time === 'string')
+    && Array.isArray(value.standings)
+    && value.standings.length >= 1;
 }
 
 function mergeImportedMembers(legacy: ClubSnapshot['members']): ClubSnapshot['members'] {

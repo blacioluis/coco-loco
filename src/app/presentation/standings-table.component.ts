@@ -10,8 +10,8 @@ import { I18nService } from '../application/i18n.service';
   template: `
     <section class="league-table-section">
       <header class="league-table-head">
-        <div><p class="eyebrow">ABSSA · DIVISION 4C</p><h2>{{ i18n.t('Le classement', 'La clasificación') }}</h2><p>{{ i18n.t('Forestois en tête, invaincu après cinq journées.', 'Forestois líder e invicto tras cinco jornadas.') }}</p></div>
-        <div class="league-update"><span>{{ i18n.t('MIS À JOUR', 'ACTUALIZADO') }}</span><b>{{ club.standingsUpdatedAt | date:'d MMM yyyy':'':i18n.locale() }}</b></div>
+        <div><p class="eyebrow">ABSSA · DIVISION 4C</p><h2>{{ i18n.t('Le classement', 'La clasificación') }}</h2><p>{{ i18n.t('Le classement officiel, actualisé automatiquement.', 'La clasificación oficial, actualizada automáticamente.') }}</p></div>
+        <div class="league-update"><span>{{ i18n.t('MIS À JOUR', 'ACTUALIZADO') }}</span><b>{{ club.standingsUpdatedAt() | date:'d MMM yyyy':'':i18n.locale() }}</b></div>
       </header>
       <div class="league-table-wrap">
         <table class="league-table">

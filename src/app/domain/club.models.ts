@@ -50,6 +50,12 @@ export interface ClubSnapshot {
   standingsUpdatedAt: string;
 }
 
+export interface SportsDataSnapshot {
+  updatedAt: string;
+  fixtures: Fixture[];
+  standings: StandingRow[];
+}
+
 export type ClubEventType = 'Entraînement' | 'Match amical' | 'Réunion' | 'Activité club';
 
 export interface ClubEvent {

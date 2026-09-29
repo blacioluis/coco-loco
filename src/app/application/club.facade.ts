@@ -10,9 +10,9 @@ export class ClubFacade {
   private readonly now = signal(Date.now());
   readonly members = signal(this.snapshot.members);
   readonly fixtures = signal([...this.snapshot.fixtures].sort((a, b) => fixtureStartTime(a) - fixtureStartTime(b)));
-  readonly fixturesUpdatedAt = this.snapshot.fixturesUpdatedAt;
+  readonly fixturesUpdatedAt = signal(this.snapshot.fixturesUpdatedAt);
   readonly standings = signal(this.snapshot.standings);
-  readonly standingsUpdatedAt = this.snapshot.standingsUpdatedAt;
+  readonly standingsUpdatedAt = signal(this.snapshot.standingsUpdatedAt);
   readonly forestoisStanding = computed(() => this.standings().find((row) => row.teamId === '152_1_forestois_sc'));
   readonly staff = computed(() => this.members().filter((member) => member.isCoach || ['Coach', 'Responsable d’équipe', 'Assistant'].includes(member.role)));
   readonly players = computed(() => this.members().filter((member) => ['Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Joueur'].includes(member.role)));
@@ -26,6 +26,16 @@ export class ClubFacade {
     // until four hours after kick-off, as requested by the club.
     const interval = window.setInterval(() => this.now.set(Date.now()), 60_000);
     this.destroyRef.onDestroy(() => window.clearInterval(interval));
+    void this.refreshSportsData();
+  }
+
+  private async refreshSportsData(): Promise<void> {
+    const data = await this.repository.loadSportsData();
+    if (!data) return;
+    this.fixtures.set([...data.fixtures].sort((a, b) => fixtureStartTime(a) - fixtureStartTime(b)));
+    this.standings.set(data.standings);
+    this.fixturesUpdatedAt.set(data.updatedAt);
+    this.standingsUpdatedAt.set(data.updatedAt);
   }
 
   addMember(name: string, role: TeamRole, number?: number, photoDataUrl?: string): void {

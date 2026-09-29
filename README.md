@@ -40,9 +40,30 @@ Les scripts `start` et `build` lancent Angular avec Node 22 (LTS). Cela évite l
 - Les dates, coups d’envoi, adversaires et terrains sont une copie de la page officielle [CalABSSA · Forestois SC 1](https://www.calabssa.be/c/152_1_forestois_sc/).
 - La prochaine rencontre reste affichée jusqu’à quatre heures après le coup d’envoi. Elle est recalculée chaque minute.
 - La page Matchs affiche l’encart du match à venir, l’entraînement récurrent du mardi (rendez-vous 19 h 45, début à 20 h au Bempt), puis les rencontres avec filtres domicile / extérieur.
-- `npm run import:calendar` récupère le bloc structuré `icalEvents` publié dans la page rendue par CalABSSA, le valide (26 rencontres minimum), puis régénère le fichier de secours. Cet import se fait à la maintenance/déploiement, jamais par scraping dans le navigateur des visiteurs.
-- Le fichier généré reste versionné : si CalABSSA est indisponible, le calendrier du site continue donc à fonctionner. La page affiche la date de la dernière mise à jour réussie.
+- `npm run import:calendar` récupère les blocs structurés `icalEvents` et `standings` publiés dans la page rendue par CalABSSA, les valide, puis régénère les fichiers de secours et `public/data/calabssa.json`.
+- En production, Angular lit `data/calabssa.json` au démarrage. Si ce fichier ou CalABSSA est temporairement indisponible, les données compilées dans l’application restent utilisées comme secours.
+- La page affiche la date de la dernière mise à jour réussie. Une synchronisation échouée ne remplace jamais le dernier fichier valide.
 - Les horodatages UTC de CalABSSA sont convertis en heure locale `Europe/Brussels` (heure d’été/hiver comprise). Vérifier le diff généré avant publication.
+
+### Synchronisation serveur chaque dimanche à 20 h
+
+Le build contient `api/sync-calabssa.php`. Ce script PHP est réservé à la ligne de commande : il n’est pas possible de le déclencher publiquement depuis une URL. Il télécharge les données officielles, exige au moins 26 rencontres et 2 équipes, puis remplace atomiquement `data/calabssa.json`. Le calendrier et le classement se mettent ainsi à jour sans recompiler Angular.
+
+Prérequis : PHP 8 en ligne de commande, sorties HTTPS autorisées, extension cURL ou `allow_url_fopen`, et droit d’écriture PHP sur le dossier `data/`.
+
+Pour tester une première synchronisation sur le serveur :
+
+```bash
+/usr/bin/php /CHEMIN_DU_SITE/coco-loco/api/sync-calabssa.php --force
+```
+
+Dans le panneau de l’hébergeur, ajouter ensuite cette tâche cron :
+
+```cron
+0 * * * 0 /usr/bin/php /CHEMIN_DU_SITE/coco-loco/api/sync-calabssa.php >> /CHEMIN_DU_SITE/coco-loco/api/data/calabssa-sync.log 2>&1
+```
+
+Le cron se présente chaque heure du dimanche, mais le script n’effectue réellement l’import qu’entre 20 h et 21 h selon le fuseau `Europe/Brussels`. Cette garde interne conserve l’heure correcte lors des changements d’heure d’été et d’hiver, indépendamment du fuseau du serveur. Adapter `/usr/bin/php` et `/CHEMIN_DU_SITE` aux valeurs indiquées par l’hébergeur.
 
 ## Où poursuivre le développement
 
