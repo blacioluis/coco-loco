@@ -19,8 +19,38 @@ if ($method === 'GET') {
     respond(200, ['club' => 'Forestois SC 1', 'acceptances' => readAcceptances($dataFile)]);
 }
 
+$deleteRequested = $method === 'DELETE' || ($method === 'POST' && ($_GET['action'] ?? '') === 'delete');
+if ($deleteRequested) {
+    requireAdmin();
+    $raw = file_get_contents('php://input');
+    $input = json_decode($raw ?: '{}', true);
+    $memberId = clean(is_array($input) ? ($input['memberId'] ?? '') : '', 80);
+    $version = clean(is_array($input) ? ($input['regulationVersion'] ?? '') : '', 30);
+    if ($memberId === '' || $version === '') respond(422, ['error' => 'Joueur ou version manquant.']);
+
+    $handle = fopen($dataFile, 'c+');
+    if ($handle === false || !flock($handle, LOCK_EX)) respond(500, ['error' => 'Registre indisponible.']);
+    $contents = stream_get_contents($handle);
+    $acceptances = json_decode($contents ?: '[]', true);
+    if (!is_array($acceptances)) $acceptances = [];
+    $remaining = array_values(array_filter($acceptances, static fn(mixed $acceptance): bool =>
+        !is_array($acceptance)
+        || ($acceptance['memberId'] ?? '') !== $memberId
+        || ($acceptance['regulationVersion'] ?? '') !== $version
+    ));
+    $deleted = count($remaining) !== count($acceptances);
+    rewind($handle);
+    ftruncate($handle, 0);
+    $written = fwrite($handle, json_encode($remaining, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+    fflush($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
+    if ($written === false) respond(500, ['error' => 'Écriture impossible.']);
+    respond(200, ['deleted' => $deleted, 'memberId' => $memberId]);
+}
+
 if ($method !== 'POST') {
-    header('Allow: GET, POST');
+    header('Allow: GET, POST, DELETE');
     respond(405, ['error' => 'Méthode non autorisée.']);
 }
 
@@ -74,6 +104,19 @@ function readAcceptances(string $file): array {
 function clean(mixed $value, int $maxLength): string {
     $text = trim(is_string($value) ? $value : '');
     return function_exists('mb_substr') ? mb_substr($text, 0, $maxLength) : substr($text, 0, $maxLength);
+}
+
+function requireAdmin(): void {
+    $username = (string) ($_SERVER['PHP_AUTH_USER'] ?? '');
+    $password = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
+    if ($username === '' && isset($_SERVER['HTTP_AUTHORIZATION']) && str_starts_with($_SERVER['HTTP_AUTHORIZATION'], 'Basic ')) {
+        $decoded = base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6), true);
+        if (is_string($decoded) && str_contains($decoded, ':')) [$username, $password] = explode(':', $decoded, 2);
+    }
+    if (!hash_equals('forestois', $username) || !hash_equals('CocoLoco2026!', $password)) {
+        header('WWW-Authenticate: Basic realm="Forestois SC 1"');
+        respond(401, ['error' => 'Authentification administrateur requise.']);
+    }
 }
 
 function respond(int $status, array $payload): void {

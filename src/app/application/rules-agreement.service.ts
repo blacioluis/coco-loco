@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import { ClubMember } from '../domain/club.models';
 import { RULES_AGREEMENT_CONFIG } from '../rules-agreement.config';
+import { ADMIN_PASSWORD, ADMIN_USERNAME } from './admin-auth.service';
 
 export interface RulesAcceptance {
   memberId: string;
@@ -54,6 +55,26 @@ export class RulesAgreementService {
 
   hasAccepted(memberId: string): boolean {
     return this.acceptances().some((item) => item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion);
+  }
+
+  async remove(memberId: string): Promise<boolean> {
+    try {
+      const deleteUrl = new URL(this.apiUrl);
+      deleteUrl.searchParams.set('action', 'delete');
+      const response = await fetch(deleteUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${btoa(`${ADMIN_USERNAME}:${ADMIN_PASSWORD}`)}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ memberId, regulationVersion: RULES_AGREEMENT_CONFIG.regulationVersion }),
+      });
+      if (!response.ok) return false;
+      this.save(this.acceptances().filter((item) => !(item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion)));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async exportJson(): Promise<void> {

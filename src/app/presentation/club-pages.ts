@@ -7,6 +7,7 @@ import { I18nService } from '../application/i18n.service';
 import { AdminAuthService } from '../application/admin-auth.service';
 import { ClubEventsService } from '../application/club-events.service';
 import { PlayerPhotoService } from '../application/player-photo.service';
+import { RulesAcceptance, RulesAgreementService } from '../application/rules-agreement.service';
 import { ClubEventType, TeamRole } from '../domain/club.models';
 import { TeamPhotoHeaderComponent } from './team-photo-header.component';
 import { StandingsTableComponent } from './standings-table.component';
@@ -80,6 +81,7 @@ export class PlayerPage {
   <section class="dashboard-stats"><article><span>{{ i18n.t('ÉVÉNEMENTS', 'EVENTOS') }}</span><b>{{ events.events().length }}</b><small>{{ i18n.t('créés par le club', 'creados por el club') }}</small></article><article><span>{{ i18n.t('EFFECTIF', 'PLANTILLA') }}</span><b>{{ club.members().length }}</b><small>{{ i18n.t('membres enregistrés', 'miembros registrados') }}</small></article><article><span>{{ i18n.t('MATCHS', 'PARTIDOS') }}</span><b>{{ club.fixtures().length }}</b><small>{{ i18n.t('au calendrier', 'en el calendario') }}</small></article></section>
   <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('AGENDA DU CLUB', 'AGENDA DEL CLUB') }}</p><h2>{{ i18n.t('Créer un événement', 'Crear un evento') }}</h2></div></div><form (ngSubmit)="addEvent()" class="event-form"><label>{{ i18n.t('Titre', 'Título') }}<input name="eventTitle" [(ngModel)]="eventTitle" required></label><label>{{ i18n.t('Type', 'Tipo') }}<select name="eventType" [(ngModel)]="eventType">@for (type of eventTypes; track type) { <option [ngValue]="type">{{ eventTypeLabel(type) }}</option> }</select></label><label>{{ i18n.t('Date', 'Fecha') }}<input name="eventDate" [(ngModel)]="eventDate" type="date" required></label><label>{{ i18n.t('Heure', 'Hora') }}<input name="eventTime" [(ngModel)]="eventTime" type="time" required></label><label class="event-wide">{{ i18n.t('Lieu', 'Lugar') }}<input name="eventLocation" [(ngModel)]="eventLocation" required></label><label class="event-wide">{{ i18n.t('Description', 'Descripción') }}<textarea name="eventDescription" [(ngModel)]="eventDescription" rows="3"></textarea></label><button class="button" type="submit">{{ i18n.t('Publier l’événement', 'Publicar el evento') }} ＋</button></form></section>
   <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('ÉVÉNEMENTS', 'EVENTOS') }}</p><h2>{{ i18n.t('Agenda à venir', 'Próxima agenda') }}</h2></div><span class="count-tag">{{ events.events().length }}</span></div>@if (events.events().length) { <div class="event-list">@for (event of events.events(); track event.id) { <article><time><b>{{ event.date | date:'d':'':i18n.locale() }}</b><span>{{ event.date | date:'MMM':'':i18n.locale() }}</span></time><div><small>{{ eventTypeLabel(event.type) }} · {{ event.time }}</small><h3>{{ event.title }}</h3><p>{{ event.location }}@if (event.description) { · {{ event.description }} }</p></div><button class="remove-button" type="button" (click)="events.remove(event.id)">{{ i18n.t('Supprimer', 'Eliminar') }}</button></article> }</div> } @else { <div class="empty-inline">{{ i18n.t('Aucun événement créé pour le moment.', 'No hay eventos creados por el momento.') }}</div> }</section>
+  <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('RÈGLEMENT', 'REGLAMENTO') }}</p><h2>{{ i18n.t('Accords enregistrés', 'Acuerdos registrados') }}</h2><p class="subtle">{{ i18n.t('Supprimez ici une acceptation enregistrée par erreur.', 'Elimina aquí una aceptación registrada por error.') }}</p></div><span class="count-tag">{{ agreements.currentAcceptances().length }}</span></div>@if (agreementDeleteError) { <p class="admin-action-error">{{ agreementDeleteError }}</p> }@if (agreements.currentAcceptances().length) { <div class="admin-agreements">@for (acceptance of agreements.currentAcceptances(); track acceptance.memberId) { <article><div><b>{{ acceptance.memberName }}</b><small>{{ i18n.t('Accepté le', 'Aceptado el') }} {{ acceptance.acceptedAt | date:'d MMMM yyyy, HH:mm':'':i18n.locale() }}</small></div><button class="remove-button" type="button" [disabled]="deletingAgreementId === acceptance.memberId" (click)="removeAgreement(acceptance)">{{ deletingAgreementId === acceptance.memberId ? i18n.t('Suppression…', 'Eliminando…') : i18n.t('Supprimer l’accord', 'Eliminar acuerdo') }}</button></article> }</div> } @else { <div class="empty-inline">{{ i18n.t('Aucun accord enregistré.', 'No hay acuerdos registrados.') }}</div> }</section>
   <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('EFFECTIF', 'PLANTILLA') }}</p><h2>{{ i18n.t('Ajouter un membre', 'Añadir un miembro') }}</h2></div></div><form (ngSubmit)="add()" class="member-form"><label>{{ i18n.t('Nom complet', 'Nombre completo') }}<input name="name" [(ngModel)]="name" required></label><label>{{ i18n.t('Rôle', 'Rol') }}<select name="role" [(ngModel)]="role">@for (item of roles; track item) { <option [ngValue]="item">{{ i18n.role(item) }}</option> }</select></label><label>{{ i18n.t('Numéro', 'Número') }}<input name="number" [(ngModel)]="number" type="number" min="1" max="99"></label><label class="photo-field">{{ i18n.t('Photo', 'Foto') }}<input type="file" accept="image/jpeg,image/png,image/webp" (change)="selectNewPhoto($event)"><small>{{ i18n.t('Compression WebP automatique', 'Compresión WebP automática') }}</small></label>@if (newPhoto) { <img class="photo-preview" [src]="newPhoto" alt=""> }<button class="button" type="submit">{{ i18n.t('Ajouter', 'Añadir') }} ＋</button></form>@if (photoError) { <p class="photo-error">{{ photoError }}</p> }<div class="admin-members">@for (person of club.members(); track person.id) { <div class="admin-member"><div class="admin-member-identity">@if (person.photoDataUrl) { <img class="member-avatar" [src]="person.photoDataUrl" [alt]="person.name"> } @else { <span class="role-symbol">{{ person.name.slice(0, 1) }}</span> }<span><b>{{ person.name }}</b><small>{{ person.sourceRole === 'Joueur-coach' ? i18n.t('Joueur-coach', 'Jugador-entrenador') : i18n.role(person.role) }}{{ person.position ? ' · '+person.position : '' }}{{ person.number ? ' · #'+person.number : '' }}</small></span></div><div class="member-actions"><label class="photo-button">{{ person.photoDataUrl ? i18n.t('Remplacer', 'Cambiar') : i18n.t('Ajouter une photo', 'Añadir foto') }}<input type="file" accept="image/jpeg,image/png,image/webp" (change)="replacePhoto(person.id, $event)"></label>@if (person.photoDataUrl) { <button class="remove-button" type="button" (click)="club.updateMemberPhoto(person.id)">{{ i18n.t('Retirer la photo', 'Quitar foto') }}</button> }<button class="remove-button" type="button" (click)="remove(person.id)">{{ i18n.t('Supprimer', 'Eliminar') }}</button></div></div> }</div></section>
 }
 </main>` })
@@ -88,6 +90,7 @@ export class AdminPage {
   readonly i18n = inject(I18nService);
   readonly auth = inject(AdminAuthService);
   readonly events = inject(ClubEventsService);
+  readonly agreements = inject(RulesAgreementService);
   private readonly playerPhoto = inject(PlayerPhotoService);
   readonly roles = TEAM_ROLES;
   readonly eventTypes: ClubEventType[] = ['Entraînement', 'Match amical', 'Réunion', 'Activité club'];
@@ -105,6 +108,8 @@ export class AdminPage {
   eventTime = '';
   eventLocation = 'Complexe Sportif du Bempt';
   eventDescription = '';
+  deletingAgreementId = '';
+  agreementDeleteError = '';
   login() { this.loginError = !this.auth.login(this.username.trim(), this.password); this.password = ''; }
   add() { if (!this.name.trim()) return; this.club.addMember(this.name, this.role, this.number ?? undefined, this.newPhoto || undefined); this.name = ''; this.number = null; this.newPhoto = ''; }
   remove(id: string) { this.club.removeMember(id); }
@@ -127,5 +132,14 @@ export class AdminPage {
   eventTypeLabel(type: ClubEventType) {
     const labels: Record<ClubEventType, string> = { 'Entraînement': 'Entrenamiento', 'Match amical': 'Partido amistoso', 'Réunion': 'Reunión', 'Activité club': 'Actividad del club' };
     return this.i18n.language() === 'es' ? labels[type] : type;
+  }
+  async removeAgreement(acceptance: RulesAcceptance) {
+    const confirmed = window.confirm(this.i18n.t(`Supprimer l’accord de ${acceptance.memberName} ?`, `¿Eliminar el acuerdo de ${acceptance.memberName}?`));
+    if (!confirmed) return;
+    this.deletingAgreementId = acceptance.memberId;
+    this.agreementDeleteError = '';
+    const removed = await this.agreements.remove(acceptance.memberId);
+    if (!removed) this.agreementDeleteError = this.i18n.t('Suppression impossible. Vérifiez que la nouvelle API a bien été publiée sur LWS.', 'No se pudo eliminar. Comprueba que la nueva API esté publicada en LWS.');
+    this.deletingAgreementId = '';
   }
 }
