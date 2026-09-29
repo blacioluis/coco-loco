@@ -265,6 +265,17 @@ const RULES: RuleSection[] = [
   },
   {
     number: 12,
+    title: { fr: 'Arrivée de nouveaux joueurs', es: 'Llegada de nuevos jugadores' },
+    paragraphs: [
+      { fr: 'Tout joueur qui souhaite inviter ou amener une personne supplémentaire à un entraînement ou à une activité de l’équipe doit prévenir les responsables au préalable.', es: 'Todo jugador que quiera invitar o traer a una persona adicional a un entrenamiento o a una actividad del equipo debe avisar previamente a los responsables.' },
+      { fr: 'La personne pourra rejoindre le groupe uniquement après avoir reçu l’accord explicite d’un responsable. Sans cet accord, elle ne devra pas se présenter.', es: 'La persona solo podrá incorporarse al grupo después de recibir la autorización expresa de un responsable. Sin esta autorización, no deberá presentarse.' },
+    ],
+    closing: [
+      { fr: 'Nous sommes déjà nombreux : cette règle permet de bien gérer l’effectif, de préserver la qualité des entraînements et de maintenir un bon niveau sportif. Merci pour votre compréhension.', es: 'Ya somos un grupo numeroso: esta regla permite gestionar bien la plantilla, preservar la calidad de los entrenamientos y mantener un buen nivel deportivo. Gracias por vuestra comprensión.' },
+    ],
+  },
+  {
+    number: 13,
     title: { fr: 'Respect général du règlement', es: 'Respeto general del reglamento' },
     paragraphs: [
       { fr: 'Les règles s’appliquent à tous les joueurs de la même manière. Faire partie du SC Forestois 1 implique notamment de respecter :', es: 'Las reglas se aplican de la misma manera a todos los jugadores. Formar parte del SC Forestois 1 implica respetar especialmente:' },
