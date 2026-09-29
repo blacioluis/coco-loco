@@ -13,6 +13,7 @@ export interface RulesAcceptance {
 
 export interface AgreementRemovalResult {
   removed: boolean;
+  localOnly?: boolean;
   error?: string;
 }
 
@@ -79,12 +80,22 @@ export class RulesAgreementService {
         }),
       });
       const result = await response.json().catch(() => ({})) as { deleted?: boolean; error?: string };
+      const apiUnavailable = this.apiStatus() === 'offline' || [403, 404, 405].includes(response.status);
+      if (!response.ok && apiUnavailable) {
+        this.removeLocal(memberId);
+        return { removed: true, localOnly: true };
+      }
       if (!response.ok) return { removed: false, error: result.error ?? `Erreur serveur ${response.status}` };
       this.save(this.acceptances().filter((item) => !(item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion)));
       return { removed: true };
     } catch {
-      return { removed: false, error: 'API inaccessible' };
+      this.removeLocal(memberId);
+      return { removed: true, localOnly: true };
     }
+  }
+
+  private removeLocal(memberId: string): void {
+    this.save(this.acceptances().filter((item) => !(item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion)));
   }
 
   async exportJson(): Promise<void> {
