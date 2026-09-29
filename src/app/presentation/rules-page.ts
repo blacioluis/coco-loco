@@ -60,22 +60,11 @@ interface RuleSection {
             <div><p class="eyebrow">{{ t('ACCORD DU JOUEUR', 'ACUERDO DEL JUGADOR') }}</p><h2>{{ t('Je reconnais avoir lu le règlement.', 'Confirmo haber leído el reglamento.') }}</h2><p>{{ t('Choisis ton profil puis confirme ton accord. L’acceptation est enregistrée avec la date et l’heure.', 'Selecciona tu perfil y confirma tu acuerdo. La aceptación se registra con la fecha y la hora.') }}</p></div>
             <div class="agreement-count"><b>{{ agreement.currentAcceptances().length }}</b><span>{{ t('accords enregistrés', 'acuerdos registrados') }}</span></div>
           </header>
-          <div class="agreement-warning"><span>!</span><div><b>{{ t('Condition de convocation', 'Condición de convocatoria') }}</b><p>{{ t('Un joueur qui n’a pas accepté le règlement avant la date limite ne pourra pas être convoqué pour un match.', 'Un jugador que no haya aceptado el reglamento antes de la fecha límite no podrá ser convocado para un partido.') }}</p><small>{{ agreementConfig.deadline ? t('Date limite : ', 'Fecha límite: ') + agreementConfig.deadline : t('La date limite sera communiquée par les responsables.', 'La fecha límite será comunicada por los responsables.') }}</small></div></div>
+          <div class="agreement-warning"><span>!</span><div><b>{{ t('Condition de convocation', 'Condición de convocatoria') }}</b><p>{{ t('Un joueur qui n’a pas accepté le règlement avant la date limite ne pourra pas être convoqué pour un match.', 'Un jugador que no haya aceptado el reglamento antes de la fecha límite no podrá ser convocado para un partido.') }}</p><small>{{ agreementConfig.deadline ? t('Date limite : ', 'Fecha límite: ') + deadlineDate(agreementConfig.deadline) : t('La date limite sera communiquée par les responsables.', 'La fecha límite será comunicada por los responsables.') }}</small></div></div>
           @if (agreement.apiStatus() === 'online') { <div class="agreement-sync-status online"><i></i><b>{{ t('Serveur connecté', 'Servidor conectado') }}</b><span>{{ t('Les accords de tous les appareils sont regroupés dans le registre central.', 'Los acuerdos de todos los dispositivos se agrupan en el registro central.') }}</span></div> }
           @else if (agreement.apiStatus() === 'connecting') { <div class="agreement-sync-status"><i></i><b>{{ t('Connexion au registre…', 'Conexión al registro…') }}</b></div> }
           @else { <div class="agreement-sync-status offline"><i></i><b>{{ t('Mode hors ligne', 'Modo sin conexión') }}</b><span>{{ t('L’accord restera sur cet appareil et sera synchronisé dès que le serveur répondra.', 'El acuerdo permanecerá en este dispositivo y se sincronizará cuando el servidor responda.') }}</span></div> }
           <div class="agreement-progress"><div><span>{{ t('Progression des accords', 'Progreso de los acuerdos') }}</span><b>{{ agreement.currentAcceptances().length }} / {{ players.length }}</b></div><div class="agreement-progress-track"><span [style.width.%]="agreementProgress"></span></div><small>{{ pendingPlayers.length }} {{ t('joueur(s) encore en attente', 'jugador(es) todavía pendientes') }}</small></div>
-
-          <section class="accepted-section">
-            <header><div><p class="eyebrow">{{ t('ACCORDS ENREGISTRÉS', 'ACUERDOS REGISTRADOS') }}</p><h3>{{ t('Ils ont déjà accepté.', 'Ya han aceptado.') }}</h3></div><span>{{ acceptedPlayers.length }}</span></header>
-            @if (acceptedPlayers.length) { <div class="accepted-player-grid">@for (item of acceptedPlayers; track item.acceptance.memberId) {
-              <article>
-                @if (item.player?.photoDataUrl) { <img [src]="item.player?.photoDataUrl" [alt]="item.acceptance.memberName"> } @else { <span class="agreement-avatar accepted-avatar">{{ initials(item.acceptance.memberName) }}</span> }
-                <div><b>{{ item.acceptance.memberName }}</b><small>{{ t('Accepté le', 'Aceptado el') }} {{ acceptanceDate(item.acceptance.acceptedAt) }}</small></div>
-                <span class="accepted-check">✓</span>
-              </article>
-            }</div> } @else { <div class="accepted-empty"><span>✓</span><p>{{ t('Aucun accord enregistré pour le moment.', 'Todavía no hay acuerdos registrados.') }}</p></div> }
-          </section>
 
           <div class="agreement-picker">
             <div class="agreement-picker-head"><div><p class="eyebrow">{{ t('EN ATTENTE', 'PENDIENTES') }}</p><h3>{{ t('Choisis ton nom pour accepter.', 'Selecciona tu nombre para aceptar.') }}</h3></div><span>{{ pendingPlayers.length }}</span></div>
@@ -93,6 +82,17 @@ interface RuleSection {
           </div>
           @if (confirmation()) { <div class="agreement-success">✓ {{ confirmation() }}</div> }
           <footer class="agreement-export"><div><b>{{ t('Registre des accords', 'Registro de acuerdos') }}</b><span>{{ t('Télécharge un fichier de sauvegarde après chaque nouvelle acceptation.', 'Descarga un archivo de respaldo después de cada nueva aceptación.') }}</span></div><button type="button" class="secondary-button button" (click)="agreement.exportJson()" [disabled]="!agreement.currentAcceptances().length">{{ t('Exporter le fichier JSON', 'Exportar archivo JSON') }} ↓</button></footer>
+
+          <section class="accepted-section">
+            <header><div><p class="eyebrow">{{ t('ACCORDS ENREGISTRÉS', 'ACUERDOS REGISTRADOS') }}</p><h3>{{ t('Ils ont déjà accepté.', 'Ya han aceptado.') }}</h3></div><span>{{ acceptedPlayers.length }}</span></header>
+            @if (acceptedPlayers.length) { <div class="accepted-player-grid">@for (item of acceptedPlayers; track item.acceptance.memberId) {
+              <article>
+                @if (item.player?.photoDataUrl) { <img [src]="item.player?.photoDataUrl" [alt]="item.acceptance.memberName"> } @else { <span class="agreement-avatar accepted-avatar">{{ initials(item.acceptance.memberName) }}</span> }
+                <div><b>{{ item.acceptance.memberName }}</b><small>{{ t('Accepté le', 'Aceptado el') }} {{ acceptanceDate(item.acceptance.acceptedAt) }}</small></div>
+                <span class="accepted-check">✓</span>
+              </article>
+            }</div> } @else { <div class="accepted-empty"><span>✓</span><p>{{ t('Aucun accord enregistré pour le moment.', 'Todavía no hay acuerdos registrados.') }}</p></div> }
+          </section>
         </section>
       }
 
@@ -122,6 +122,7 @@ export class RulesPage {
   text(value: LocalizedText) { return this.i18n.language() === 'es' ? value.es : value.fr; }
   twoDigits(value: number) { return String(value).padStart(2, '0'); }
   initials(name: string) { return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase(); }
+  deadlineDate(value: string) { return new Date(`${value}T12:00:00`).toLocaleDateString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { day: 'numeric', month: 'long', year: 'numeric' }); }
   acceptanceDate(value: string) { return new Date(value).toLocaleString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { dateStyle: 'medium', timeStyle: 'short' }); }
   async confirmAgreement() {
     const player = this.selectedPlayer;
