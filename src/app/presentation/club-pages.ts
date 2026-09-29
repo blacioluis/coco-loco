@@ -138,8 +138,8 @@ export class AdminPage {
     if (!confirmed) return;
     this.deletingAgreementId = acceptance.memberId;
     this.agreementDeleteError = '';
-    const removed = await this.agreements.remove(acceptance.memberId);
-    if (!removed) this.agreementDeleteError = this.i18n.t('Suppression impossible. Vérifiez que la nouvelle API a bien été publiée sur LWS.', 'No se pudo eliminar. Comprueba que la nueva API esté publicada en LWS.');
+    const result = await this.agreements.remove(acceptance.memberId);
+    if (!result.removed) this.agreementDeleteError = `${this.i18n.t('Suppression impossible', 'No se pudo eliminar')}${result.error ? ` : ${result.error}` : '.'}`;
     this.deletingAgreementId = '';
   }
 }

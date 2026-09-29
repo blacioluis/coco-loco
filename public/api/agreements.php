@@ -21,11 +21,12 @@ if ($method === 'GET') {
 
 $deleteRequested = $method === 'DELETE' || ($method === 'POST' && ($_GET['action'] ?? '') === 'delete');
 if ($deleteRequested) {
-    requireAdmin();
     $raw = file_get_contents('php://input');
     $input = json_decode($raw ?: '{}', true);
-    $memberId = clean(is_array($input) ? ($input['memberId'] ?? '') : '', 80);
-    $version = clean(is_array($input) ? ($input['regulationVersion'] ?? '') : '', 30);
+    if (!is_array($input)) respond(400, ['error' => 'JSON invalide.']);
+    requireAdmin($input);
+    $memberId = clean($input['memberId'] ?? '', 80);
+    $version = clean($input['regulationVersion'] ?? '', 30);
     if ($memberId === '' || $version === '') respond(422, ['error' => 'Joueur ou version manquant.']);
 
     $handle = fopen($dataFile, 'c+');
@@ -106,9 +107,11 @@ function clean(mixed $value, int $maxLength): string {
     return function_exists('mb_substr') ? mb_substr($text, 0, $maxLength) : substr($text, 0, $maxLength);
 }
 
-function requireAdmin(): void {
-    $username = (string) ($_SERVER['PHP_AUTH_USER'] ?? '');
-    $password = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
+function requireAdmin(array $input = []): void {
+    $username = clean($input['adminUsername'] ?? '', 80);
+    $password = clean($input['adminPassword'] ?? '', 120);
+    if ($username === '') $username = (string) ($_SERVER['PHP_AUTH_USER'] ?? '');
+    if ($password === '') $password = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
     if ($username === '' && isset($_SERVER['HTTP_AUTHORIZATION']) && str_starts_with($_SERVER['HTTP_AUTHORIZATION'], 'Basic ')) {
         $decoded = base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6), true);
         if (is_string($decoded) && str_contains($decoded, ':')) [$username, $password] = explode(':', $decoded, 2);

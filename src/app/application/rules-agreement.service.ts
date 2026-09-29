@@ -11,6 +11,11 @@ export interface RulesAcceptance {
   synced?: boolean;
 }
 
+export interface AgreementRemovalResult {
+  removed: boolean;
+  error?: string;
+}
+
 const STORAGE_KEY = 'forestois-rules-acceptances-v1';
 
 @Injectable({ providedIn: 'root' })
@@ -57,23 +62,28 @@ export class RulesAgreementService {
     return this.acceptances().some((item) => item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion);
   }
 
-  async remove(memberId: string): Promise<boolean> {
+  async remove(memberId: string): Promise<AgreementRemovalResult> {
     try {
       const deleteUrl = new URL(this.apiUrl);
       deleteUrl.searchParams.set('action', 'delete');
       const response = await fetch(deleteUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${btoa(`${ADMIN_USERNAME}:${ADMIN_PASSWORD}`)}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ memberId, regulationVersion: RULES_AGREEMENT_CONFIG.regulationVersion }),
+        body: JSON.stringify({
+          memberId,
+          regulationVersion: RULES_AGREEMENT_CONFIG.regulationVersion,
+          adminUsername: ADMIN_USERNAME,
+          adminPassword: ADMIN_PASSWORD,
+        }),
       });
-      if (!response.ok) return false;
+      const result = await response.json().catch(() => ({})) as { deleted?: boolean; error?: string };
+      if (!response.ok) return { removed: false, error: result.error ?? `Erreur serveur ${response.status}` };
       this.save(this.acceptances().filter((item) => !(item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion)));
-      return true;
+      return { removed: true };
     } catch {
-      return false;
+      return { removed: false, error: 'API inaccessible' };
     }
   }
 
