@@ -54,16 +54,16 @@ Prérequis : PHP 8.0 ou plus récent en ligne de commande, sorties HTTPS autoris
 Pour tester une première synchronisation sur le serveur :
 
 ```bash
-/usr/bin/php /CHEMIN_DU_SITE/coco-loco/api/sync-calabssa.php --force
+php /htdocs/api/sync-calabssa.php --force
 ```
 
 Dans le panneau de l’hébergeur, ajouter ensuite cette tâche cron :
 
 ```cron
-0 * * * 0 /usr/bin/php /CHEMIN_DU_SITE/coco-loco/api/sync-calabssa.php >> /CHEMIN_DU_SITE/coco-loco/api/data/calabssa-sync.log 2>&1
+0 20 * * 0 php /htdocs/api/sync-calabssa.php --force >> /htdocs/api/data/calabssa-sync.log 2>&1
 ```
 
-Le cron se présente chaque heure du dimanche, mais le script n’effectue réellement l’import qu’entre 20 h et 21 h selon le fuseau `Europe/Brussels`. Cette garde interne conserve l’heure correcte lors des changements d’heure d’été et d’hiver, indépendamment du fuseau du serveur. Adapter `/usr/bin/php` et `/CHEMIN_DU_SITE` aux valeurs indiquées par l’hébergeur.
+Cette configuration LWS lance directement la synchronisation chaque dimanche à 20 h. Le site étant publié à la racine du domaine, son chemin est `/htdocs/` et non `/htdocs/coco-loco/`.
 
 ## Où poursuivre le développement
 
@@ -97,10 +97,8 @@ Le choix d’un nom n’est pas une authentification forte. Pour empêcher l’u
 
 1. Installer les dépendances avec `npm install`.
 2. Construire le site avec `npm run build`.
-3. Publier **le contenu du dossier `dist/`** comme site statique, pas la racine du projet.
+3. Publier **le contenu du dossier `dist/`** directement dans `/htdocs/`, à la racine du nom de domaine. Ne pas recréer de dossier `coco-loco`.
 
-Pour une publication sous `https://domaine.be/coco-loco/`, utiliser `npm run build:coco-loco`. Ce script produit explicitement un build production avec `<base href="/coco-loco/">`.
-
-Le dossier `dist/api/` doit être envoyé avec le reste du build. Ne jamais supprimer ni remplacer le fichier `.acceptances.json` déjà créé sur le serveur lors d’une mise à jour. Vérifier ensuite que `https://domaine.be/coco-loco/api/agreements.php` renvoie du JSON et non le contenu du fichier PHP.
+Le dossier `dist/api/` doit être envoyé avec le reste du build. Ne jamais supprimer ni remplacer le fichier `.acceptances.json` déjà créé sur le serveur lors d’une mise à jour. Vérifier ensuite que `https://votre-domaine.be/api/agreements.php` renvoie du JSON et non le contenu du fichier PHP.
 
 Les illustrations et les deux blasons se trouvent dans `public/assets/`. Angular les copie dans `dist/assets/`. Les pages utilisent des chemins relatifs à la base Angular afin qu’ils fonctionnent aussi lorsque l’application est hébergée sous un sous-chemin. Vérifier que le dossier publié contient bien `index.html` et `assets/`.
