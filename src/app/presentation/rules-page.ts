@@ -38,7 +38,7 @@ interface RuleSection {
       </section>
 
       <div class="rules-layout">
-        <aside class="rules-toc"><p>{{ t('DANS CE RÈGLEMENT', 'EN ESTE REGLAMENTO') }}</p><nav>@for (rule of rules; track rule.number) { <a [href]="'#regle-' + rule.number"><span>{{ twoDigits(rule.number) }}</span>{{ text(rule.title) }}</a> }</nav></aside>
+        <aside class="rules-toc"><p>{{ t('DANS CE RÈGLEMENT', 'EN ESTE REGLAMENTO') }}</p><nav>@for (rule of rules; track rule.number) { <button type="button" (click)="scrollToRule(rule.number)"><span>{{ twoDigits(rule.number) }}</span>{{ text(rule.title) }}</button> }</nav></aside>
         <section class="rules-content">
           @for (rule of rules; track rule.number) {
             <article class="rule-article" [id]="'regle-' + rule.number">
@@ -121,6 +121,7 @@ export class RulesPage {
   t(fr: string, es: string) { return this.i18n.t(fr, es); }
   text(value: LocalizedText) { return this.i18n.language() === 'es' ? value.es : value.fr; }
   twoDigits(value: number) { return String(value).padStart(2, '0'); }
+  scrollToRule(ruleNumber: number) { document.getElementById(`regle-${ruleNumber}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   initials(name: string) { return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase(); }
   deadlineDate(value: string) { return new Date(`${value}T12:00:00`).toLocaleDateString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { day: 'numeric', month: 'long', year: 'numeric' }); }
   acceptanceDate(value: string) { return new Date(value).toLocaleString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { dateStyle: 'medium', timeStyle: 'short' }); }

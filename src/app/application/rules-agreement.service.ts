@@ -92,8 +92,8 @@ export class RulesAgreementService {
       const result = await response.json() as { acceptances: RulesAcceptance[] };
       const serverAcceptances = result.acceptances.map((item) => ({ ...item, synced: true }));
       this.apiStatus.set('online');
-      this.merge(serverAcceptances);
       const pending = this.acceptances().filter((item) => !item.synced);
+      this.save([...serverAcceptances, ...pending].sort((a, b) => a.acceptedAt.localeCompare(b.acceptedAt)));
       for (const item of pending) await this.pushPending(item);
     } catch {
       this.apiStatus.set('offline');

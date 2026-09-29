@@ -93,6 +93,14 @@ Pendant `npm start`, Angular ne peut pas exécuter PHP : la page passe volontair
 
 Le choix d’un nom n’est pas une authentification forte. Pour empêcher l’usurpation, une prochaine étape pourra ajouter un code personnel par joueur ou une connexion sécurisée.
 
+Pour supprimer proprement un accord depuis le Terminal Web LWS, utiliser l’identifiant du joueur. Par exemple, pour Luis Blacio :
+
+```bash
+php /htdocs/api/remove-acceptance.php luis-blacio
+```
+
+Le registre se trouve physiquement dans `/htdocs/api/data/.acceptances.json`, mais la commande ci-dessus est préférable à une modification manuelle : elle verrouille le fichier et conserve un JSON valide. Après suppression, recharger la page du règlement ; le registre serveur est prioritaire et la suppression est répercutée dans le cache du navigateur.
+
 ## Déployer sur un autre hébergeur
 
 1. Installer les dépendances avec `npm install`.
