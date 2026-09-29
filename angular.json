@@ -70,7 +70,8 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "none",
+              "namedChunks": true
             },
             "development": {
               "optimization": false,

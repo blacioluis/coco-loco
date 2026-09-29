@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "node_modules/node/bin/node node_modules/@angular/cli/bin/ng.js serve",
     "build": "node_modules/node/bin/node node_modules/@angular/cli/bin/ng.js build",
+    "build:coco-loco": "node_modules/node/bin/node node_modules/@angular/cli/bin/ng.js build --configuration production --base-href /coco-loco/",
     "import:calendar": "node scripts/import-calabssa.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

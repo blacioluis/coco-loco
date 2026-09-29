@@ -11,8 +11,11 @@ export class ClubFacade {
   readonly members = signal(this.snapshot.members);
   readonly fixtures = signal([...this.snapshot.fixtures].sort((a, b) => fixtureStartTime(a) - fixtureStartTime(b)));
   readonly fixturesUpdatedAt = this.snapshot.fixturesUpdatedAt;
-  readonly staff = computed(() => this.members().filter((member) => ['Coach', 'Responsable d’équipe', 'Assistant'].includes(member.role)));
-  readonly players = computed(() => this.members().filter((member) => ['Gardien', 'Défenseur', 'Milieu', 'Attaquant'].includes(member.role)));
+  readonly standings = signal(this.snapshot.standings);
+  readonly standingsUpdatedAt = this.snapshot.standingsUpdatedAt;
+  readonly forestoisStanding = computed(() => this.standings().find((row) => row.teamId === '152_1_forestois_sc'));
+  readonly staff = computed(() => this.members().filter((member) => member.isCoach || ['Coach', 'Responsable d’équipe', 'Assistant'].includes(member.role)));
+  readonly players = computed(() => this.members().filter((member) => ['Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Joueur'].includes(member.role)));
   readonly nextFixture = computed(() => {
     const now = this.now();
     return this.fixtures().find((fixture) => fixture.status === 'scheduled' && fixtureEndTime(fixture) >= now);
@@ -25,11 +28,19 @@ export class ClubFacade {
     this.destroyRef.onDestroy(() => window.clearInterval(interval));
   }
 
-  addMember(name: string, role: TeamRole, number?: number): void {
+  addMember(name: string, role: TeamRole, number?: number, photoDataUrl?: string): void {
     const cleanName = name.trim();
     if (!cleanName) return;
-    const member: ClubMember = { id: crypto.randomUUID(), name: cleanName, role, ...(number ? { number } : {}) };
+    const member: ClubMember = { id: crypto.randomUUID(), name: cleanName, role, ...(number ? { number } : {}), ...(photoDataUrl ? { photoDataUrl } : {}) };
     this.persist([...this.members(), member]);
+  }
+
+  updateMemberPhoto(id: string, photoDataUrl?: string): void {
+    this.persist(this.members().map((member) => {
+      if (member.id !== id) return member;
+      const { photoDataUrl: _oldPhoto, ...withoutPhoto } = member;
+      return photoDataUrl ? { ...withoutPhoto, photoDataUrl } : withoutPhoto;
+    }));
   }
 
   removeMember(id: string): void {
@@ -54,4 +65,4 @@ function fixtureStartTime(fixture: Fixture): number {
   return new Date(year, month - 1, day, hours, minutes).getTime();
 }
 
-export const TEAM_ROLES: TeamRole[] = ['Coach', 'Responsable d’équipe', 'Assistant', 'Gardien', 'Défenseur', 'Milieu', 'Attaquant'];
+export const TEAM_ROLES: TeamRole[] = ['Coach', 'Responsable d’équipe', 'Assistant', 'Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Joueur'];

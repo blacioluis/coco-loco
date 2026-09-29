@@ -27,8 +27,23 @@ export class I18nService {
       'Défenseur': 'Defensa',
       'Milieu': 'Centrocampista',
       'Attaquant': 'Delantero',
+      'Joueur': 'Jugador',
     };
     return this.language() === 'es' ? labels[role] : role;
+  }
+
+  position(position: string): string {
+    const labels: Record<string, string> = {
+      'Ailier': 'Extremo',
+      'Arrière latéral': 'Lateral',
+      'Attaquant': 'Delantero',
+      'Défenseur': 'Defensa',
+      'Défenseur central': 'Defensa central',
+      'Milieu': 'Centrocampista',
+      'Milieu défensif': 'Centrocampista defensivo',
+      'Milieu offensif': 'Centrocampista ofensivo',
+    };
+    return this.language() === 'es' ? labels[position] ?? position : position;
   }
 
   applyDocumentLanguage(): void {

@@ -1,4 +1,4 @@
-export type TeamRole = 'Coach' | 'Responsable d’équipe' | 'Assistant' | 'Gardien' | 'Défenseur' | 'Milieu' | 'Attaquant';
+export type TeamRole = 'Coach' | 'Responsable d’équipe' | 'Assistant' | 'Gardien' | 'Défenseur' | 'Milieu' | 'Attaquant' | 'Joueur';
 
 export interface ClubMember {
   id: string;
@@ -6,6 +6,13 @@ export interface ClubMember {
   role: TeamRole;
   number?: number;
   bio?: string;
+  photoDataUrl?: string;
+  position?: string;
+  sourceRole?: 'Joueur' | 'Joueur-coach';
+  isCoach?: boolean;
+  phone?: string;
+  email?: string;
+  sourceUrl?: string;
 }
 
 export interface Fixture {
@@ -22,10 +29,25 @@ export interface Fixture {
   awayScore?: number;
 }
 
+export interface StandingRow {
+  teamId: string;
+  name: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+}
+
 export interface ClubSnapshot {
   members: ClubMember[];
   fixtures: Fixture[];
   fixturesUpdatedAt: string;
+  standings: StandingRow[];
+  standingsUpdatedAt: string;
 }
 
 export type ClubEventType = 'Entraînement' | 'Match amical' | 'Réunion' | 'Activité club';
