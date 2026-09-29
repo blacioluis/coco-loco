@@ -76,7 +76,7 @@ function clean(mixed $value, int $maxLength): string {
     return function_exists('mb_substr') ? mb_substr($text, 0, $maxLength) : substr($text, 0, $maxLength);
 }
 
-function respond(int $status, array $payload): never {
+function respond(int $status, array $payload): void {
     http_response_code($status);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE);
     exit;

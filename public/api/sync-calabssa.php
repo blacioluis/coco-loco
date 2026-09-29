@@ -181,7 +181,7 @@ function toStanding(array $row): array {
     ];
 }
 
-function fail(string $message): never {
+function fail(string $message): void {
     fwrite(STDERR, '[CalABSSA] ' . $message . "\n");
     exit(1);
 }

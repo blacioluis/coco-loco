@@ -49,7 +49,7 @@ Les scripts `start` et `build` lancent Angular avec Node 22 (LTS). Cela évite l
 
 Le build contient `api/sync-calabssa.php`. Ce script PHP est réservé à la ligne de commande : il n’est pas possible de le déclencher publiquement depuis une URL. Il télécharge les données officielles, exige au moins 26 rencontres et 2 équipes, puis remplace atomiquement `data/calabssa.json`. Le calendrier et le classement se mettent ainsi à jour sans recompiler Angular.
 
-Prérequis : PHP 8 en ligne de commande, sorties HTTPS autorisées, extension cURL ou `allow_url_fopen`, et droit d’écriture PHP sur le dossier `data/`.
+Prérequis : PHP 8.0 ou plus récent en ligne de commande, sorties HTTPS autorisées, extension cURL ou `allow_url_fopen`, et droit d’écriture PHP sur le dossier `data/`.
 
 Pour tester une première synchronisation sur le serveur :
 
