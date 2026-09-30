@@ -26,8 +26,7 @@ export class RulesAgreementService {
   readonly apiStatus = signal<'connecting' | 'online' | 'offline'>('connecting');
 
   constructor() {
-    if (RULES_AGREEMENT_CONFIG.apiEnabled) void this.sync();
-    else this.apiStatus.set('offline');
+    if (!RULES_AGREEMENT_CONFIG.apiEnabled) this.apiStatus.set('offline');
   }
 
   async accept(member: ClubMember): Promise<RulesAcceptance> {
@@ -61,6 +60,16 @@ export class RulesAgreementService {
 
   hasAccepted(memberId: string): boolean {
     return this.acceptances().some((item) => item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion);
+  }
+
+  async refresh(): Promise<boolean> {
+    this.acceptances.set(this.load());
+    if (!RULES_AGREEMENT_CONFIG.apiEnabled) {
+      this.apiStatus.set('offline');
+      return false;
+    }
+    await this.sync();
+    return this.apiStatus() === 'online';
   }
 
   async remove(memberId: string): Promise<AgreementRemovalResult> {

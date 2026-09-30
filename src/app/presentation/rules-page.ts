@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { ClubFacade } from '../application/club.facade';
 import { I18nService } from '../application/i18n.service';
 import { RulesAgreementService } from '../application/rules-agreement.service';
@@ -84,7 +84,8 @@ interface RuleSection {
           <footer class="agreement-export"><div><b>{{ t('Registre des accords', 'Registro de acuerdos') }}</b><span>{{ t('Télécharge un fichier de sauvegarde après chaque nouvelle acceptation.', 'Descarga un archivo de respaldo después de cada nueva aceptación.') }}</span></div><button type="button" class="secondary-button button" (click)="agreement.exportJson()" [disabled]="!agreement.currentAcceptances().length">{{ t('Exporter le fichier JSON', 'Exportar archivo JSON') }} ↓</button></footer>
 
           <section class="accepted-section">
-            <header><div><p class="eyebrow">{{ t('ACCORDS ENREGISTRÉS', 'ACUERDOS REGISTRADOS') }}</p><h3>{{ t('Ils ont déjà accepté.', 'Ya han aceptado.') }}</h3></div><span>{{ acceptedPlayers.length }}</span></header>
+            <header><div><p class="eyebrow">{{ t('ACCORDS ENREGISTRÉS', 'ACUERDOS REGISTRADOS') }}</p><h3>{{ t('Ils ont déjà accepté.', 'Ya han aceptado.') }}</h3></div><div class="accepted-heading-actions"><span>{{ acceptedPlayers.length }}</span><button class="agreement-refresh-button" type="button" [disabled]="refreshingAgreements() || refreshCooldown() > 0" (click)="refreshAgreements()"><i [class.is-spinning]="refreshingAgreements()">↻</i>@if (refreshingAgreements()) { {{ t('Actualisation…', 'Actualizando…') }} } @else if (refreshCooldown() > 0) { {{ t('Attendre', 'Esperar') }} {{ refreshCooldown() }} s } @else { {{ t('Rafraîchir la liste', 'Actualizar la lista') }} }</button></div></header>
+            @if (refreshNotice()) { <p class="agreement-refresh-notice" [class.offline]="agreement.apiStatus() !== 'online'">{{ refreshNotice() }}</p> }
             @if (acceptedPlayers.length) { <div class="accepted-player-grid">@for (item of acceptedPlayers; track item.acceptance.memberId) {
               <article>
                 @if (item.player?.photoDataUrl) { <img [src]="item.player?.photoDataUrl" [alt]="item.acceptance.memberName"> } @else { <span class="agreement-avatar accepted-avatar">{{ initials(item.acceptance.memberName) }}</span> }
@@ -108,6 +109,15 @@ export class RulesPage {
   readonly rules: RuleSection[] = RULES;
   readonly selectedMemberId = signal<string | null>(null);
   readonly confirmation = signal('');
+  readonly refreshingAgreements = signal(false);
+  readonly refreshCooldown = signal(0);
+  readonly refreshNotice = signal('');
+  private readonly destroyRef = inject(DestroyRef);
+  private refreshTimer?: ReturnType<typeof setInterval>;
+  constructor() {
+    this.destroyRef.onDestroy(() => this.stopRefreshTimer());
+    void this.refreshAgreements(false);
+  }
   get players() { return [...this.club.players()].sort((a, b) => a.name.localeCompare(b.name, 'fr')); }
   get pendingPlayers() { return this.players.filter((player) => !this.agreement.hasAccepted(player.id)); }
   get acceptedPlayers() {
@@ -125,6 +135,30 @@ export class RulesPage {
   initials(name: string) { return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase(); }
   deadlineDate(value: string) { return new Date(`${value}T12:00:00`).toLocaleDateString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { day: 'numeric', month: 'long', year: 'numeric' }); }
   acceptanceDate(value: string) { return new Date(value).toLocaleString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { dateStyle: 'medium', timeStyle: 'short' }); }
+  async refreshAgreements(userTriggered = true) {
+    if (this.refreshingAgreements() || (userTriggered && this.refreshCooldown() > 0)) return;
+    this.refreshingAgreements.set(true);
+    const serverAvailable = await this.agreement.refresh();
+    this.refreshingAgreements.set(false);
+    if (!userTriggered) return;
+    this.refreshNotice.set(serverAvailable
+      ? this.t('La liste a été synchronisée avec le registre central.', 'La lista se ha sincronizado con el registro central.')
+      : this.t('Le serveur central est indisponible : seule la liste enregistrée sur ce téléphone peut être affichée.', 'El servidor central no está disponible: solo se puede mostrar la lista guardada en este teléfono.'));
+    this.startRefreshTimer();
+  }
+  private startRefreshTimer() {
+    this.stopRefreshTimer();
+    this.refreshCooldown.set(60);
+    this.refreshTimer = setInterval(() => {
+      const next = this.refreshCooldown() - 1;
+      this.refreshCooldown.set(Math.max(0, next));
+      if (next <= 0) this.stopRefreshTimer();
+    }, 1000);
+  }
+  private stopRefreshTimer() {
+    if (this.refreshTimer) clearInterval(this.refreshTimer);
+    this.refreshTimer = undefined;
+  }
   async confirmAgreement() {
     const player = this.selectedPlayer;
     if (!player || this.agreement.hasAccepted(player.id)) return;
