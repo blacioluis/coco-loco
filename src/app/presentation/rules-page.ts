@@ -321,6 +321,19 @@ const RULES: RuleSection[] = [
   },
   {
     number: 14,
+    title: { fr: 'Critères de convocation', es: 'Criterios de convocatoria' },
+    paragraphs: [
+      { fr: 'La présence à l’entraînement est le premier critère de convocation. Les joueurs qui ont participé à l’entraînement sont prioritaires pour le match à venir.', es: 'La asistencia al entrenamiento es el primer criterio de convocatoria. Los jugadores que hayan participado en el entrenamiento tienen prioridad para el próximo partido.' },
+      { fr: 'Un joueur absent à l’entraînement n’est normalement pas convocable. Une exception peut uniquement être envisagée si, après avoir convoqué les joueurs présents, l’effectif n’est toujours pas complet ou si certains postes restent à pourvoir.', es: 'Un jugador ausente del entrenamiento normalmente no podrá ser convocado. Solo podrá contemplarse una excepción si, después de convocar a los jugadores presentes, la plantilla sigue incompleta o quedan puestos por cubrir.' },
+      { fr: 'Si un joueur convoqué ne répond pas avant le jeudi à 19 h, sa place pourra être proposée à un autre joueur correspondant aux besoins du groupe.', es: 'Si un jugador convocado no responde antes del jueves a las 19 h, su plaza podrá ofrecerse a otro jugador que responda a las necesidades del grupo.' },
+      { fr: 'Lorsque le nombre de joueurs présents à l’entraînement dépasse le nombre de places disponibles, la présence ne garantit pas automatiquement une convocation. Les responsables effectueront alors leurs choix selon les postes, l’équilibre de l’équipe, les besoins du match et la stratégie sportive afin de viser les objectifs de la saison.', es: 'Cuando el número de jugadores presentes en el entrenamiento supere las plazas disponibles, la asistencia no garantizará automáticamente una convocatoria. Los responsables elegirán entonces según las posiciones, el equilibrio del equipo, las necesidades del partido y la estrategia deportiva para alcanzar los objetivos de la temporada.' },
+    ],
+    closing: [
+      { fr: 'Ces choix sont pris dans l’intérêt collectif de l’équipe et doivent être respectés.', es: 'Estas decisiones se toman en beneficio del equipo y deben ser respetadas.' },
+    ],
+  },
+  {
+    number: 15,
     title: { fr: 'Respect général du règlement', es: 'Respeto general del reglamento' },
     paragraphs: [
       { fr: 'Les règles s’appliquent à tous les joueurs de la même manière. Faire partie du SC Forestois 1 implique notamment de respecter :', es: 'Las reglas se aplican de la misma manera a todos los jugadores. Formar parte del SC Forestois 1 implica respetar especialmente:' },
