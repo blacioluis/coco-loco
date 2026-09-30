@@ -310,6 +310,17 @@ const RULES: RuleSection[] = [
   },
   {
     number: 13,
+    title: { fr: 'Paiement de la cotisation', es: 'Pago de la cuota' },
+    paragraphs: [
+      { fr: 'Chaque joueur doit payer la cotisation demandée pour la saison.', es: 'Cada jugador debe pagar la cuota solicitada para la temporada.' },
+      { fr: 'Le montant de la cotisation ainsi que la date limite de paiement sont communiqués par le président de l’équipe. La totalité du montant indiqué doit être payée avant cette date.', es: 'El importe de la cuota y la fecha límite de pago serán comunicados por el presidente del equipo. El importe total indicado deberá pagarse antes de esa fecha.' },
+    ],
+    closing: [
+      { fr: 'En cas de difficulté, le joueur doit prévenir les responsables avant la date limite afin d’en discuter.', es: 'En caso de dificultad, el jugador deberá avisar a los responsables antes de la fecha límite para poder hablar de la situación.' },
+    ],
+  },
+  {
+    number: 14,
     title: { fr: 'Respect général du règlement', es: 'Respeto general del reglamento' },
     paragraphs: [
       { fr: 'Les règles s’appliquent à tous les joueurs de la même manière. Faire partie du SC Forestois 1 implique notamment de respecter :', es: 'Las reglas se aplican de la misma manera a todos los jugadores. Formar parte del SC Forestois 1 implica respetar especialmente:' },
