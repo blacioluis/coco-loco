@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: no-store');
+require_once __DIR__ . '/bootstrap.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $dataDirectory = __DIR__ . '/data';
@@ -24,7 +23,8 @@ if ($deleteRequested) {
     $raw = file_get_contents('php://input');
     $input = json_decode($raw ?: '{}', true);
     if (!is_array($input)) respond(400, ['error' => 'JSON invalide.']);
-    requireAdmin($input);
+    apiRequireAdmin();
+    apiRequireCsrf();
     $memberId = clean($input['memberId'] ?? '', 80);
     $version = clean($input['regulationVersion'] ?? '', 30);
     if ($memberId === '' || $version === '') respond(422, ['error' => 'Joueur ou version manquant.']);
@@ -40,6 +40,7 @@ if ($deleteRequested) {
         || ($acceptance['regulationVersion'] ?? '') !== $version
     ));
     $deleted = count($remaining) !== count($acceptances);
+    apiBackupFile($dataFile, 'acceptances');
     rewind($handle);
     ftruncate($handle, 0);
     $written = fwrite($handle, json_encode($remaining, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
@@ -87,6 +88,7 @@ $acceptance = [
     'regulationVersion' => $version,
 ];
 $acceptances[] = $acceptance;
+apiBackupFile($dataFile, 'acceptances');
 rewind($handle);
 ftruncate($handle, 0);
 $written = fwrite($handle, json_encode($acceptances, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
@@ -105,21 +107,6 @@ function readAcceptances(string $file): array {
 function clean(mixed $value, int $maxLength): string {
     $text = trim(is_string($value) ? $value : '');
     return function_exists('mb_substr') ? mb_substr($text, 0, $maxLength) : substr($text, 0, $maxLength);
-}
-
-function requireAdmin(array $input = []): void {
-    $username = clean($input['adminUsername'] ?? '', 80);
-    $password = clean($input['adminPassword'] ?? '', 120);
-    if ($username === '') $username = (string) ($_SERVER['PHP_AUTH_USER'] ?? '');
-    if ($password === '') $password = (string) ($_SERVER['PHP_AUTH_PW'] ?? '');
-    if ($username === '' && isset($_SERVER['HTTP_AUTHORIZATION']) && str_starts_with($_SERVER['HTTP_AUTHORIZATION'], 'Basic ')) {
-        $decoded = base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6), true);
-        if (is_string($decoded) && str_contains($decoded, ':')) [$username, $password] = explode(':', $decoded, 2);
-    }
-    if (!hash_equals('forestois', $username) || !hash_equals('CocoLoco2026!', $password)) {
-        header('WWW-Authenticate: Basic realm="Forestois SC 1"');
-        respond(401, ['error' => 'Authentification administrateur requise.']);
-    }
 }
 
 function respond(int $status, array $payload): void {

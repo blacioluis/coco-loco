@@ -2,6 +2,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { ClubFacade } from '../application/club.facade';
 import { I18nService } from '../application/i18n.service';
 import { RulesAgreementService } from '../application/rules-agreement.service';
+import { ClubMember } from '../domain/club.models';
 import { RULES_AGREEMENT_CONFIG } from '../rules-agreement.config';
 
 interface LocalizedText { fr: string; es: string; }
@@ -58,20 +59,20 @@ interface RuleSection {
         <section class="rules-agreement" id="accord-reglement">
           <header class="agreement-head">
             <div><p class="eyebrow">{{ t('ACCORD DU JOUEUR', 'ACUERDO DEL JUGADOR') }}</p><h2>{{ t('Je reconnais avoir lu le règlement.', 'Confirmo haber leído el reglamento.') }}</h2><p>{{ t('Choisis ton profil puis confirme ton accord. L’acceptation est enregistrée avec la date et l’heure.', 'Selecciona tu perfil y confirma tu acuerdo. La aceptación se registra con la fecha y la hora.') }}</p></div>
-            <div class="agreement-count"><b>{{ agreement.currentAcceptances().length }}</b><span>{{ t('accords enregistrés', 'acuerdos registrados') }}</span></div>
+            <div class="agreement-count"><b>{{ activeAcceptances.length }}</b><span>{{ t('accords enregistrés', 'acuerdos registrados') }}</span></div>
           </header>
           <div class="agreement-warning"><span>!</span><div><b>{{ t('Condition de convocation', 'Condición de convocatoria') }}</b><p>{{ t('Un joueur qui n’a pas accepté le règlement avant la date limite ne pourra pas être convoqué pour un match.', 'Un jugador que no haya aceptado el reglamento antes de la fecha límite no podrá ser convocado para un partido.') }}</p><small>{{ agreementConfig.deadline ? t('Date limite : ', 'Fecha límite: ') + deadlineDate(agreementConfig.deadline) : t('La date limite sera communiquée par les responsables.', 'La fecha límite será comunicada por los responsables.') }}</small></div></div>
           @if (agreement.apiStatus() === 'online') { <div class="agreement-sync-status online"><i></i><b>{{ t('Serveur connecté', 'Servidor conectado') }}</b><span>{{ t('Les accords de tous les appareils sont regroupés dans le registre central.', 'Los acuerdos de todos los dispositivos se agrupan en el registro central.') }}</span></div> }
           @else if (agreement.apiStatus() === 'connecting') { <div class="agreement-sync-status"><i></i><b>{{ t('Connexion au registre…', 'Conexión al registro…') }}</b></div> }
           @else { <div class="agreement-sync-status offline"><i></i><b>{{ t('Mode hors ligne', 'Modo sin conexión') }}</b><span>{{ t('L’accord restera sur cet appareil et sera synchronisé dès que le serveur répondra.', 'El acuerdo permanecerá en este dispositivo y se sincronizará cuando el servidor responda.') }}</span></div> }
-          <div class="agreement-progress"><div><span>{{ t('Progression des accords', 'Progreso de los acuerdos') }}</span><b>{{ agreement.currentAcceptances().length }} / {{ players.length }}</b></div><div class="agreement-progress-track"><span [style.width.%]="agreementProgress"></span></div><small>{{ pendingPlayers.length }} {{ t('joueur(s) encore en attente', 'jugador(es) todavía pendientes') }}</small></div>
+          <div class="agreement-progress"><div><span>{{ t('Progression des accords', 'Progreso de los acuerdos') }}</span><b>{{ activeAcceptances.length }} / {{ players.length }}</b></div><div class="agreement-progress-track"><span [style.width.%]="agreementProgress"></span></div><small>{{ pendingPlayers.length }} {{ t('joueur(s) encore en attente', 'jugador(es) todavía pendientes') }}</small></div>
 
           <div class="agreement-picker">
             <div class="agreement-picker-head"><div><p class="eyebrow">{{ t('EN ATTENTE', 'PENDIENTES') }}</p><h3>{{ t('Choisis ton nom pour accepter.', 'Selecciona tu nombre para aceptar.') }}</h3></div><span>{{ pendingPlayers.length }}</span></div>
             @if (pendingPlayers.length) { <div class="agreement-player-grid">@for (player of pendingPlayers; track player.id) {
               <button type="button" (click)="selectedMemberId.set(player.id)" [class.selected]="selectedMemberId() === player.id">
                 @if (player.photoDataUrl) { <img [src]="player.photoDataUrl" [alt]="player.name"> } @else { <span class="agreement-avatar">{{ initials(player.name) }}</span> }
-                <span class="agreement-player-name"><b>{{ player.name }}</b><small>{{ player.position ? i18n.position(player.position) : t('Joueur', 'Jugador') }}</small></span>
+                <span class="agreement-player-name"><b>{{ player.name }}</b><small>{{ positionsLabel(player) }}</small></span>
                 <i>{{ selectedMemberId() === player.id ? '●' : '○' }}</i>
               </button>
             }</div> } @else { <div class="all-accepted"><span>✓</span><div><b>{{ t('Tout le groupe a accepté le règlement.', 'Todo el grupo ha aceptado el reglamento.') }}</b><small>{{ t('Le registre est complet pour cette version.', 'El registro está completo para esta versión.') }}</small></div></div> }
@@ -120,12 +121,16 @@ export class RulesPage {
   }
   get players() { return [...this.club.players()].sort((a, b) => a.name.localeCompare(b.name, 'fr')); }
   get pendingPlayers() { return this.players.filter((player) => !this.agreement.hasAccepted(player.id)); }
+  get activeAcceptances() {
+    const activeIds = new Set(this.players.map((player) => player.id));
+    return this.agreement.currentAcceptances().filter((acceptance) => activeIds.has(acceptance.memberId));
+  }
   get acceptedPlayers() {
-    return [...this.agreement.currentAcceptances()]
+    return [...this.activeAcceptances]
       .sort((a, b) => b.acceptedAt.localeCompare(a.acceptedAt))
       .map((acceptance) => ({ acceptance, player: this.players.find((player) => player.id === acceptance.memberId) }));
   }
-  get agreementProgress() { return this.players.length ? Math.round(this.agreement.currentAcceptances().length / this.players.length * 100) : 0; }
+  get agreementProgress() { return this.players.length ? Math.round(this.activeAcceptances.length / this.players.length * 100) : 0; }
   get selectedPlayer() { return this.players.find((player) => player.id === this.selectedMemberId()); }
   get selectedPlayerAccepted() { return this.selectedPlayer ? this.agreement.hasAccepted(this.selectedPlayer.id) : false; }
   t(fr: string, es: string) { return this.i18n.t(fr, es); }
@@ -133,6 +138,10 @@ export class RulesPage {
   twoDigits(value: number) { return String(value).padStart(2, '0'); }
   scrollToRule(ruleNumber: number) { document.getElementById(`regle-${ruleNumber}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   initials(name: string) { return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase(); }
+  positionsLabel(member: ClubMember) {
+    const positions = member.positions?.length ? member.positions : member.position ? [member.position] : [];
+    return positions.length ? positions.map((position) => this.i18n.position(position)).join(' · ') : this.t('Joueur', 'Jugador');
+  }
   deadlineDate(value: string) { return new Date(`${value}T12:00:00`).toLocaleDateString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { day: 'numeric', month: 'long', year: 'numeric' }); }
   acceptanceDate(value: string) { return new Date(value).toLocaleString(this.i18n.language() === 'es' ? 'es-BE' : 'fr-BE', { dateStyle: 'medium', timeStyle: 'short' }); }
   async refreshAgreements(userTriggered = true) {

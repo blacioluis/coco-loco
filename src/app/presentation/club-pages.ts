@@ -8,7 +8,7 @@ import { AdminAuthService } from '../application/admin-auth.service';
 import { ClubEventsService } from '../application/club-events.service';
 import { PlayerPhotoService } from '../application/player-photo.service';
 import { RulesAcceptance, RulesAgreementService } from '../application/rules-agreement.service';
-import { ClubEventType, TeamRole } from '../domain/club.models';
+import { ClubEventType, ClubMember, TeamRole } from '../domain/club.models';
 import { TeamPhotoHeaderComponent } from './team-photo-header.component';
 import { StandingsTableComponent } from './standings-table.component';
 
@@ -54,35 +54,59 @@ export class FixturesPage {
 @Component({ standalone: true, imports: [CommonModule, RouterLink, TeamPhotoHeaderComponent], template: `
 <main class="page"><app-team-photo-header eyebrow="FORESTOIS SC 1 · D4C" [title]="i18n.t('Le groupe', 'El grupo')" accent="Forestois." [description]="i18n.t('Le staff et les joueurs, au cœur du club.', 'El cuerpo técnico y los jugadores, en el corazón del club.')" [imageAlt]="i18n.t('Photo de l’équipe Forestois SC 1', 'Foto del equipo Forestois SC 1')" [metricValue]="club.players().length.toString()" [metricLabel]="i18n.t('joueurs', 'jugadores')" />
 <section class="squad-section"><div class="squad-heading"><div><p class="eyebrow">{{ i18n.t('LE VESTIAIRE', 'EL VESTUARIO') }}</p><h2>{{ i18n.t('Une équipe. Tous les profils.', 'Un equipo. Todos los perfiles.') }}</h2><p>{{ i18n.t('Clique sur une fiche pour découvrir le profil du joueur.', 'Abre una ficha para descubrir el perfil del jugador.') }}</p></div><div class="squad-total"><strong>{{ club.players().length }}</strong><span>{{ i18n.t('joueurs', 'jugadores') }}</span></div></div>
-<div class="player-grid">@for (person of sortedPlayers; track person.id) { <article class="player-card"><a class="player-card-main" [routerLink]="['/joueurs', person.id]">@if (person.photoDataUrl) { <img class="player-card-photo" [src]="person.photoDataUrl" [alt]="person.name"> } @else { <span class="player-card-monogram">{{ initials(person.name) }}</span> }@if (person.number) { <span class="shirt-number">{{ person.number }}</span> }<span class="player-card-copy">@if (person.isCoach) { <small class="coach-chip">{{ i18n.t('JOUEUR-COACH', 'JUGADOR-ENTRENADOR') }}</small> } @else { <small>FORESTOIS SC 1</small> }<b>{{ person.name }}</b><span>{{ person.position ? i18n.position(person.position) : i18n.t('Poste à confirmer', 'Posición por confirmar') }}</span></span></a><a class="profile-goto" [routerLink]="['/joueurs', person.id]" [attr.aria-label]="i18n.t('Voir le profil de ', 'Ver el perfil de ') + person.name"><span>{{ i18n.t('Voir le profil', 'Ver perfil') }}</span><b>→</b></a></article> }</div></section>
+<div class="player-grid">@for (person of sortedPlayers; track person.id) { <article class="player-card"><a class="player-card-main" [routerLink]="['/joueurs', person.id]">@if (person.photoDataUrl) { <img class="player-card-photo" [src]="person.photoDataUrl" [alt]="person.name"> } @else { <span class="player-card-monogram">{{ initials(person.name) }}</span> }@if (person.number) { <span class="shirt-number">{{ person.number }}</span> }<span class="player-card-copy">@if (person.isCoach) { <small class="coach-chip">{{ i18n.t('JOUEUR-COACH', 'JUGADOR-ENTRENADOR') }}</small> } @else { <small>FORESTOIS SC 1</small> }<b>{{ person.name }}</b><span class="position-tags">@for (position of memberPositions(person); track position) { <i>{{ i18n.position(position) }}</i> } @empty { <i>{{ i18n.t('Poste à confirmer', 'Posición por confirmar') }}</i> }</span></span></a><a class="profile-goto" [routerLink]="['/joueurs', person.id]" [attr.aria-label]="i18n.t('Voir le profil de ', 'Ver el perfil de ') + person.name"><span>{{ i18n.t('Voir le profil', 'Ver perfil') }}</span><b>→</b></a></article> }</div></section>
 <section class="staff-band"><div><p class="eyebrow">{{ i18n.t('ENCADREMENT', 'CUERPO TÉCNICO') }}</p><h2>{{ i18n.t('Les joueurs-coachs', 'Los jugadores-entrenadores') }}</h2></div><div class="staff-band-list">@for (person of club.staff(); track person.id) { <a [routerLink]="['/joueurs', person.id]">@if (person.photoDataUrl) { <img class="member-avatar" [src]="person.photoDataUrl" alt=""> } @else { <span>{{ initials(person.name) }}</span> }<b>{{ person.name }}</b><i>↗</i></a> }</div></section></main>` })
 export class TeamPage {
   readonly club = inject(ClubFacade);
   readonly i18n = inject(I18nService);
   get sortedPlayers() { return [...this.club.players()].sort((a, b) => a.name.localeCompare(b.name, 'fr')); }
   initials(name: string) { return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase(); }
+  memberPositions(member: ClubMember) { return member.positions?.length ? member.positions : member.position ? [member.position] : []; }
 }
 
 @Component({ standalone: true, imports: [CommonModule, RouterLink], template: `
-<main class="page"><a routerLink="/equipe" class="back-link">← {{ i18n.t('Retour à l’équipe', 'Volver al equipo') }}</a>@if (member; as person) { <header class="profile-head">@if (person.photoDataUrl) { <img class="profile-photo" [src]="person.photoDataUrl" [alt]="person.name"> } @else { <span class="profile-number">{{ person.number ?? 'SCF' }}</span> }<div><p class="eyebrow">{{ person.sourceRole === 'Joueur-coach' ? i18n.t('Joueur-coach', 'Jugador-entrenador') : i18n.role(person.role) }} · FORESTOIS SC 1</p><h1>{{ person.name }}</h1><p class="lede">{{ person.bio || i18n.t('Profil en cours de création.', 'Perfil en proceso de creación.') }}</p></div></header><div class="profile-details"><span>{{ i18n.t('POSTE', 'POSICIÓN') }}</span><b>{{ person.position ? i18n.position(person.position) : i18n.role(person.role) }}</b></div>@if (person.phone || person.email) { <div class="profile-contact">@if (person.phone) { <a [href]="'tel:' + person.phone.replaceAll(' ', '')"><small>{{ i18n.t('TÉLÉPHONE', 'TELÉFONO') }}</small><b>{{ person.phone }}</b></a> }@if (person.email) { <a [href]="'mailto:' + person.email"><small>E-MAIL</small><b>{{ person.email }}</b></a> }@if (person.sourceUrl) { <a [href]="person.sourceUrl" target="_blank" rel="noreferrer"><small>{{ i18n.t('SOURCE', 'FUENTE') }}</small><b>CalABSSA ↗</b></a> }</div> } } @else { <section class="empty-state"><span>SCF</span><h1>{{ i18n.t('Profil introuvable', 'Perfil no encontrado') }}</h1><p>{{ i18n.t('Ce membre a peut-être été retiré de l’effectif.', 'Es posible que este miembro haya sido retirado de la plantilla.') }}</p><a routerLink="/equipe" class="button">{{ i18n.t('Voir l’équipe', 'Ver el equipo') }}</a></section> }</main>` })
+<main class="page"><a routerLink="/equipe" class="back-link">← {{ i18n.t('Retour à l’équipe', 'Volver al equipo') }}</a>@if (member; as person) { <header class="profile-head">@if (person.photoDataUrl) { <img class="profile-photo" [src]="person.photoDataUrl" [alt]="person.name"> } @else { <span class="profile-number">{{ person.number ?? 'SCF' }}</span> }<div><p class="eyebrow">{{ person.sourceRole === 'Joueur-coach' ? i18n.t('Joueur-coach', 'Jugador-entrenador') : i18n.role(person.role) }} · FORESTOIS SC 1</p><h1>{{ person.name }}</h1><p class="lede">{{ person.bio || i18n.t('Profil en cours de création.', 'Perfil en proceso de creación.') }}</p></div></header><div class="profile-details"><span>{{ i18n.t('POSTES', 'POSICIONES') }}</span><b class="position-tags">@for (position of memberPositions(person); track position) { <i>{{ i18n.position(position) }}</i> } @empty { <i>{{ i18n.role(person.role) }}</i> }</b></div>@if (person.phone || person.email) { <div class="profile-contact">@if (person.phone) { <a [href]="'tel:' + person.phone.replaceAll(' ', '')"><small>{{ i18n.t('TÉLÉPHONE', 'TELÉFONO') }}</small><b>{{ person.phone }}</b></a> }@if (person.email) { <a [href]="'mailto:' + person.email"><small>E-MAIL</small><b>{{ person.email }}</b></a> }@if (person.sourceUrl) { <a [href]="person.sourceUrl" target="_blank" rel="noreferrer"><small>{{ i18n.t('SOURCE', 'FUENTE') }}</small><b>CalABSSA ↗</b></a> }</div> } } @else { <section class="empty-state"><span>SCF</span><h1>{{ i18n.t('Profil introuvable', 'Perfil no encontrado') }}</h1><p>{{ i18n.t('Ce membre a peut-être été retiré de l’effectif.', 'Es posible que este miembro haya sido retirado de la plantilla.') }}</p><a routerLink="/equipe" class="button">{{ i18n.t('Voir l’équipe', 'Ver el equipo') }}</a></section> }</main>` })
 export class PlayerPage {
   private readonly route = inject(ActivatedRoute);
   private readonly club = inject(ClubFacade);
   readonly i18n = inject(I18nService);
-  readonly member = this.club.members().find((member) => member.id === this.route.snapshot.paramMap.get('id'));
+  readonly member = this.club.activeMembers().find((member) => member.id === this.route.snapshot.paramMap.get('id'));
+  memberPositions(member: ClubMember) { return member.positions?.length ? member.positions : member.position ? [member.position] : []; }
 }
 
 @Component({ standalone: true, imports: [CommonModule, FormsModule], template: `
 <main class="page admin-page">
-@if (!auth.authenticated()) {
-  <section class="admin-login"><img src="assets/club-coco.png" alt="Blason Forestois SC"><p class="eyebrow">FORESTOIS SC 1</p><h1>{{ i18n.t('Espace club', 'Área del club') }}</h1><p>{{ i18n.t('Connectez-vous pour gérer l’équipe et ses événements.', 'Inicia sesión para gestionar el equipo y sus eventos.') }}</p><form (ngSubmit)="login()"><label>{{ i18n.t('Identifiant', 'Usuario') }}<input name="username" [(ngModel)]="username" autocomplete="username" required></label><label>{{ i18n.t('Mot de passe', 'Contraseña') }}<input name="password" [(ngModel)]="password" type="password" autocomplete="current-password" required></label>@if (loginError) { <span class="login-error">{{ i18n.t('Identifiants incorrects.', 'Credenciales incorrectas.') }}</span> }<button class="button" type="submit">{{ i18n.t('Se connecter', 'Iniciar sesión') }}</button></form><small>{{ i18n.t('Accès local de démonstration : ne pas utiliser pour des données sensibles.', 'Acceso local de demostración: no usar para datos sensibles.') }}</small></section>
+@if (auth.checking()) {
+  <section class="admin-login"><p class="eyebrow">FORESTOIS SC 1</p><h1>{{ i18n.t('Vérification de la session…', 'Verificando la sesión…') }}</h1></section>
+} @else if (!auth.authenticated()) {
+  <section class="admin-login"><img src="assets/club-coco.png" alt="Blason Forestois SC"><p class="eyebrow">FORESTOIS SC 1</p><h1>{{ i18n.t('Espace club', 'Área del club') }}</h1><p>{{ i18n.t('Connectez-vous pour gérer l’équipe et ses événements.', 'Inicia sesión para gestionar el equipo y sus eventos.') }}</p><form (ngSubmit)="login()"><label>{{ i18n.t('Identifiant', 'Usuario') }}<input name="username" [(ngModel)]="username" autocomplete="username" required></label><label>{{ i18n.t('Mot de passe', 'Contraseña') }}<input name="password" [(ngModel)]="password" type="password" autocomplete="current-password" required></label>@if (loginError) { <span class="login-error">{{ i18n.t('Connexion refusée ou serveur indisponible.', 'Acceso denegado o servidor no disponible.') }}</span> }<button class="button" type="submit" [disabled]="loggingIn">{{ loggingIn ? i18n.t('Connexion…', 'Conectando…') : i18n.t('Se connecter', 'Iniciar sesión') }}</button></form><small>{{ i18n.t('Session sécurisée côté serveur.', 'Sesión segura en el servidor.') }}</small></section>
 } @else {
   <header class="admin-dashboard-head"><div><p class="eyebrow">{{ i18n.t('TABLEAU DE BORD', 'PANEL DE CONTROL') }}</p><h1>{{ i18n.t('Bonjour, Forestois.', 'Hola, Forestois.') }}</h1><p>{{ i18n.t('Gérez les événements et l’effectif depuis un seul endroit.', 'Gestiona los eventos y la plantilla desde un solo lugar.') }}</p></div><button class="secondary-button button" type="button" (click)="auth.logout()">{{ i18n.t('Se déconnecter', 'Cerrar sesión') }}</button></header>
-  <section class="dashboard-stats"><article><span>{{ i18n.t('ÉVÉNEMENTS', 'EVENTOS') }}</span><b>{{ events.events().length }}</b><small>{{ i18n.t('créés par le club', 'creados por el club') }}</small></article><article><span>{{ i18n.t('EFFECTIF', 'PLANTILLA') }}</span><b>{{ club.members().length }}</b><small>{{ i18n.t('membres enregistrés', 'miembros registrados') }}</small></article><article><span>{{ i18n.t('MATCHS', 'PARTIDOS') }}</span><b>{{ club.fixtures().length }}</b><small>{{ i18n.t('au calendrier', 'en el calendario') }}</small></article></section>
+  <section class="dashboard-stats"><article><span>{{ i18n.t('ÉVÉNEMENTS', 'EVENTOS') }}</span><b>{{ events.events().length }}</b><small>{{ i18n.t('créés par le club', 'creados por el club') }}</small></article><article><span>{{ i18n.t('EFFECTIF ACTIF', 'PLANTILLA ACTIVA') }}</span><b>{{ club.activeMembers().length }}</b><small>{{ club.members().length }} {{ i18n.t('membres enregistrés', 'miembros registrados') }}</small></article><article><span>{{ i18n.t('MATCHS', 'PARTIDOS') }}</span><b>{{ club.fixtures().length }}</b><small>{{ i18n.t('au calendrier', 'en el calendario') }}</small></article></section>
   <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('AGENDA DU CLUB', 'AGENDA DEL CLUB') }}</p><h2>{{ i18n.t('Créer un événement', 'Crear un evento') }}</h2></div></div><form (ngSubmit)="addEvent()" class="event-form"><label>{{ i18n.t('Titre', 'Título') }}<input name="eventTitle" [(ngModel)]="eventTitle" required></label><label>{{ i18n.t('Type', 'Tipo') }}<select name="eventType" [(ngModel)]="eventType">@for (type of eventTypes; track type) { <option [ngValue]="type">{{ eventTypeLabel(type) }}</option> }</select></label><label>{{ i18n.t('Date', 'Fecha') }}<input name="eventDate" [(ngModel)]="eventDate" type="date" required></label><label>{{ i18n.t('Heure', 'Hora') }}<input name="eventTime" [(ngModel)]="eventTime" type="time" required></label><label class="event-wide">{{ i18n.t('Lieu', 'Lugar') }}<input name="eventLocation" [(ngModel)]="eventLocation" required></label><label class="event-wide">{{ i18n.t('Description', 'Descripción') }}<textarea name="eventDescription" [(ngModel)]="eventDescription" rows="3"></textarea></label><button class="button" type="submit">{{ i18n.t('Publier l’événement', 'Publicar el evento') }} ＋</button></form></section>
   <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('ÉVÉNEMENTS', 'EVENTOS') }}</p><h2>{{ i18n.t('Agenda à venir', 'Próxima agenda') }}</h2></div><span class="count-tag">{{ events.events().length }}</span></div>@if (events.events().length) { <div class="event-list">@for (event of events.events(); track event.id) { <article><time><b>{{ event.date | date:'d':'':i18n.locale() }}</b><span>{{ event.date | date:'MMM':'':i18n.locale() }}</span></time><div><small>{{ eventTypeLabel(event.type) }} · {{ event.time }}</small><h3>{{ event.title }}</h3><p>{{ event.location }}@if (event.description) { · {{ event.description }} }</p></div><button class="remove-button" type="button" (click)="events.remove(event.id)">{{ i18n.t('Supprimer', 'Eliminar') }}</button></article> }</div> } @else { <div class="empty-inline">{{ i18n.t('Aucun événement créé pour le moment.', 'No hay eventos creados por el momento.') }}</div> }</section>
   <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('RÈGLEMENT', 'REGLAMENTO') }}</p><h2>{{ i18n.t('Accords enregistrés', 'Acuerdos registrados') }}</h2><p class="subtle">{{ i18n.t('Supprimez ici une acceptation enregistrée par erreur.', 'Elimina aquí una aceptación registrada por error.') }}</p></div><span class="count-tag">{{ agreements.currentAcceptances().length }}</span></div>@if (agreementDeleteError) { <p class="admin-action-error">{{ agreementDeleteError }}</p> }@if (agreementActionMessage) { <p class="admin-action-message">{{ agreementActionMessage }}</p> }@if (agreements.currentAcceptances().length) { <div class="admin-agreements">@for (acceptance of agreements.currentAcceptances(); track acceptance.memberId) { <article><div><b>{{ acceptance.memberName }}</b><small>{{ i18n.t('Accepté le', 'Aceptado el') }} {{ acceptance.acceptedAt | date:'d MMMM yyyy, HH:mm':'':i18n.locale() }}</small></div><button class="remove-button" type="button" [disabled]="deletingAgreementId === acceptance.memberId" (click)="removeAgreement(acceptance)">{{ deletingAgreementId === acceptance.memberId ? i18n.t('Suppression…', 'Eliminando…') : i18n.t('Supprimer l’accord', 'Eliminar acuerdo') }}</button></article> }</div> } @else { <div class="empty-inline">{{ i18n.t('Aucun accord enregistré.', 'No hay acuerdos registrados.') }}</div> }</section>
-  <section class="admin-panel"><div class="section-heading"><div><p class="eyebrow">{{ i18n.t('EFFECTIF', 'PLANTILLA') }}</p><h2>{{ i18n.t('Ajouter un membre', 'Añadir un miembro') }}</h2></div></div><form (ngSubmit)="add()" class="member-form"><label>{{ i18n.t('Nom complet', 'Nombre completo') }}<input name="name" [(ngModel)]="name" required></label><label>{{ i18n.t('Rôle', 'Rol') }}<select name="role" [(ngModel)]="role">@for (item of roles; track item) { <option [ngValue]="item">{{ i18n.role(item) }}</option> }</select></label><label>{{ i18n.t('Numéro', 'Número') }}<input name="number" [(ngModel)]="number" type="number" min="1" max="99"></label><label class="photo-field">{{ i18n.t('Photo', 'Foto') }}<input type="file" accept="image/jpeg,image/png,image/webp" (change)="selectNewPhoto($event)"><small>{{ i18n.t('Compression WebP automatique', 'Compresión WebP automática') }}</small></label>@if (newPhoto) { <img class="photo-preview" [src]="newPhoto" alt=""> }<button class="button" type="submit">{{ i18n.t('Ajouter', 'Añadir') }} ＋</button></form>@if (photoError) { <p class="photo-error">{{ photoError }}</p> }<div class="admin-members">@for (person of club.members(); track person.id) { <div class="admin-member"><div class="admin-member-identity">@if (person.photoDataUrl) { <img class="member-avatar" [src]="person.photoDataUrl" [alt]="person.name"> } @else { <span class="role-symbol">{{ person.name.slice(0, 1) }}</span> }<span><b>{{ person.name }}</b><small>{{ person.sourceRole === 'Joueur-coach' ? i18n.t('Joueur-coach', 'Jugador-entrenador') : i18n.role(person.role) }}{{ person.position ? ' · '+person.position : '' }}{{ person.number ? ' · #'+person.number : '' }}</small></span></div><div class="member-actions"><label class="photo-button">{{ person.photoDataUrl ? i18n.t('Remplacer', 'Cambiar') : i18n.t('Ajouter une photo', 'Añadir foto') }}<input type="file" accept="image/jpeg,image/png,image/webp" (change)="replacePhoto(person.id, $event)"></label>@if (person.photoDataUrl) { <button class="remove-button" type="button" (click)="club.updateMemberPhoto(person.id)">{{ i18n.t('Retirer la photo', 'Quitar foto') }}</button> }<button class="remove-button" type="button" (click)="remove(person.id)">{{ i18n.t('Supprimer', 'Eliminar') }}</button></div></div> }</div></section>
+  <section class="admin-panel">
+    <div class="section-heading"><div><p class="eyebrow">{{ i18n.t('EFFECTIF', 'PLANTILLA') }}</p><h2>{{ i18n.t('Ajouter un membre', 'Añadir un miembro') }}</h2><p class="subtle">{{ i18n.t('Les profils sont partagés sur tous les appareils. Un joueur peut avoir plusieurs postes.', 'Los perfiles se comparten en todos los dispositivos. Un jugador puede tener varias posiciones.') }}</p></div></div>
+    <form (ngSubmit)="add()" class="member-form">
+      <label>{{ i18n.t('Nom complet', 'Nombre completo') }}<input name="name" [(ngModel)]="name" required></label>
+      <label>{{ i18n.t('Rôle', 'Rol') }}<select name="role" [(ngModel)]="role">@for (item of roles; track item) { <option [ngValue]="item">{{ i18n.role(item) }}</option> }</select></label>
+      <label>{{ i18n.t('Numéro', 'Número') }}<input name="number" [(ngModel)]="number" type="number" min="1" max="99"></label>
+      <label>{{ i18n.t('Postes (séparés par des virgules)', 'Posiciones (separadas por comas)') }}<input name="positions" [(ngModel)]="positions" [placeholder]="i18n.t('Ex. Ailier, Attaquant', 'Ej. Extremo, Delantero')"></label>
+      <label class="photo-field">{{ i18n.t('Photo', 'Foto') }}<input type="file" accept="image/jpeg,image/png,image/webp" (change)="selectNewPhoto($event)"><small>{{ i18n.t('Compression WebP automatique', 'Compresión WebP automática') }}</small></label>
+      @if (newPhoto) { <img class="photo-preview" [src]="newPhoto" alt=""> }
+      <button class="button" type="submit" [disabled]="savingMember">{{ savingMember ? i18n.t('Enregistrement…', 'Guardando…') : i18n.t('Ajouter', 'Añadir') + ' ＋' }}</button>
+    </form>
+    @if (photoError) { <p class="photo-error">{{ photoError }}</p> }@if (memberStatusMessage) { <p class="admin-action-message">{{ memberStatusMessage }}</p> }@if (memberStatusError) { <p class="admin-action-error">{{ memberStatusError }}</p> }
+    <div class="admin-members">@for (person of club.members(); track person.id) {
+      <div class="admin-member" [class.inactive]="person.active === false">
+        <div class="admin-member-identity">@if (person.photoDataUrl) { <img class="member-avatar" [src]="person.photoDataUrl" [alt]="person.name"> } @else { <span class="role-symbol">{{ person.name.slice(0, 1) }}</span> }<span><b>{{ person.name }} <i class="member-status" [class.off]="person.active === false">{{ person.active === false ? i18n.t('INACTIF', 'INACTIVO') : i18n.t('ACTIF', 'ACTIVO') }}</i></b><small>{{ person.sourceRole === 'Joueur-coach' ? i18n.t('Joueur-coach', 'Jugador-entrenador') : i18n.role(person.role) }}{{ person.number ? ' · #'+person.number : '' }}</small></span></div>
+        @if (editingMemberId === person.id) { <div class="admin-member-editor"><input [(ngModel)]="editName" [name]="'edit-name-'+person.id" [placeholder]="i18n.t('Nom complet', 'Nombre completo')"><select [(ngModel)]="editRole" [name]="'edit-role-'+person.id">@for (item of roles; track item) { <option [ngValue]="item">{{ i18n.role(item) }}</option> }</select><input [(ngModel)]="editNumber" [name]="'edit-number-'+person.id" type="number" min="1" max="99" [placeholder]="i18n.t('Numéro', 'Número')"><button type="button" class="button" (click)="saveMemberDetails(person)">{{ i18n.t('Enregistrer', 'Guardar') }}</button><button type="button" class="remove-button" (click)="editingMemberId = ''">{{ i18n.t('Annuler', 'Cancelar') }}</button></div> }
+        <div class="admin-position-editor"><div class="position-tags">@for (position of memberPositions(person); track position) { <span>{{ position }} <button type="button" [attr.aria-label]="i18n.t('Retirer ', 'Quitar ') + position" (click)="removePosition(person, position)">×</button></span> } @empty { <small>{{ i18n.t('Aucun poste précis', 'Sin posición específica') }}</small> }</div><div><input [name]="'position-'+person.id" [(ngModel)]="positionInputs[person.id]" [placeholder]="i18n.t('Ajouter un poste', 'Añadir posición')" (keyup.enter)="addPosition(person)"><button type="button" (click)="addPosition(person)">＋</button></div></div>
+        <div class="member-actions"><button class="secondary-button" type="button" (click)="editMember(person)">{{ i18n.t('Modifier', 'Editar') }}</button><button class="status-toggle-button" [class.activate]="person.active === false" type="button" [disabled]="updatingMemberId === person.id" (click)="toggleMemberStatus(person)">{{ updatingMemberId === person.id ? i18n.t('Enregistrement…', 'Guardando…') : person.active === false ? i18n.t('Réactiver', 'Reactivar') : i18n.t('Désactiver', 'Desactivar') }}</button><label class="photo-button">{{ person.photoDataUrl ? i18n.t('Remplacer', 'Cambiar') : i18n.t('Ajouter une photo', 'Añadir foto') }}<input type="file" accept="image/jpeg,image/png,image/webp" (change)="replacePhoto(person.id, $event)"></label>@if (person.photoDataUrl) { <button class="remove-button" type="button" (click)="removePhoto(person.id)">{{ i18n.t('Retirer la photo', 'Quitar foto') }}</button> }<button class="remove-button" type="button" (click)="remove(person)">{{ i18n.t('Supprimer', 'Eliminar') }}</button></div>
+      </div>
+    }</div>
+  </section>
 }
 </main>` })
 export class AdminPage {
@@ -97,11 +121,22 @@ export class AdminPage {
   username = '';
   password = '';
   loginError = false;
+  loggingIn = false;
   name = '';
   role: TeamRole = 'Gardien';
   number: number | null = null;
+  positions = '';
   newPhoto = '';
   photoError = '';
+  updatingMemberId = '';
+  memberStatusMessage = '';
+  memberStatusError = '';
+  savingMember = false;
+  positionInputs: Record<string, string> = {};
+  editingMemberId = '';
+  editName = '';
+  editRole: TeamRole = 'Joueur';
+  editNumber: number | null = null;
   eventTitle = '';
   eventType: ClubEventType = 'Entraînement';
   eventDate = '';
@@ -111,11 +146,76 @@ export class AdminPage {
   deletingAgreementId = '';
   agreementDeleteError = '';
   agreementActionMessage = '';
-  login() { this.loginError = !this.auth.login(this.username.trim(), this.password); this.password = ''; }
-  add() { if (!this.name.trim()) return; this.club.addMember(this.name, this.role, this.number ?? undefined, this.newPhoto || undefined); this.name = ''; this.number = null; this.newPhoto = ''; }
-  remove(id: string) { this.club.removeMember(id); }
+  async login() {
+    this.loggingIn = true;
+    this.loginError = !await this.auth.login(this.username.trim(), this.password);
+    this.password = '';
+    this.loggingIn = false;
+  }
+  async add() {
+    if (!this.name.trim()) return;
+    this.savingMember = true;
+    this.clearMemberMessages();
+    const saved = await this.club.addMember(this.name, this.role, this.parsePositions(this.positions), this.auth.csrfToken(), this.number ?? undefined, this.newPhoto || undefined);
+    if (saved) { this.memberStatusMessage = this.i18n.t('Le membre a été ajouté au registre central.', 'El miembro se añadió al registro central.'); this.name = ''; this.number = null; this.positions = ''; this.newPhoto = ''; }
+    else this.memberStatusError = this.serverError();
+    this.savingMember = false;
+  }
+  async remove(member: ClubMember) {
+    if (!window.confirm(this.i18n.t(`Supprimer définitivement ${member.name} ?`, `¿Eliminar definitivamente a ${member.name}?`))) return;
+    this.clearMemberMessages();
+    const saved = await this.club.removeMember(member.id, this.auth.csrfToken());
+    if (saved) this.memberStatusMessage = this.i18n.t(`${member.name} a été supprimé.`, `${member.name} ha sido eliminado.`);
+    else this.memberStatusError = this.serverError();
+  }
+  editMember(member: ClubMember) { this.editingMemberId = member.id; this.editName = member.name; this.editRole = member.role; this.editNumber = member.number ?? null; }
+  async saveMemberDetails(member: ClubMember) {
+    this.clearMemberMessages();
+    const saved = await this.club.updateMemberDetails(member.id, { name: this.editName, role: this.editRole, number: this.editNumber ?? undefined }, this.auth.csrfToken());
+    if (saved) { this.memberStatusMessage = this.i18n.t('Le profil a été mis à jour.', 'El perfil se actualizó.'); this.editingMemberId = ''; }
+    else this.memberStatusError = this.serverError();
+  }
+  async toggleMemberStatus(member: ClubMember) {
+    this.updatingMemberId = member.id;
+    this.memberStatusMessage = '';
+    this.memberStatusError = '';
+    const active = member.active === false;
+    const saved = await this.club.setMemberActive(member.id, active, this.auth.csrfToken());
+    if (saved) this.memberStatusMessage = this.i18n.t(`${member.name} est maintenant ${active ? 'actif' : 'inactif'}.`, `${member.name} ahora está ${active ? 'activo' : 'inactivo'}.`);
+    else this.memberStatusError = this.i18n.t('Le serveur n’a pas pu enregistrer ce changement.', 'El servidor no pudo guardar este cambio.');
+    this.updatingMemberId = '';
+  }
   async selectNewPhoto(event: Event) { this.newPhoto = await this.readPhoto(event); }
-  async replacePhoto(id: string, event: Event) { const photo = await this.readPhoto(event); if (photo) this.club.updateMemberPhoto(id, photo); }
+  async replacePhoto(id: string, event: Event) {
+    const photo = await this.readPhoto(event);
+    if (!photo) return;
+    this.clearMemberMessages();
+    const saved = await this.club.updateMemberPhoto(id, photo, this.auth.csrfToken());
+    if (!saved) this.memberStatusError = this.serverError();
+  }
+  async removePhoto(id: string) {
+    this.clearMemberMessages();
+    const saved = await this.club.updateMemberPhoto(id, null, this.auth.csrfToken());
+    if (!saved) this.memberStatusError = this.serverError();
+  }
+  memberPositions(member: ClubMember) { return member.positions?.length ? member.positions : member.position ? [member.position] : []; }
+  async addPosition(member: ClubMember) {
+    const position = (this.positionInputs[member.id] ?? '').trim();
+    if (!position) return;
+    await this.savePositions(member, [...this.memberPositions(member), position]);
+    this.positionInputs[member.id] = '';
+  }
+  async removePosition(member: ClubMember, position: string) { await this.savePositions(member, this.memberPositions(member).filter((item) => item !== position)); }
+  private async savePositions(member: ClubMember, positions: string[]) {
+    this.updatingMemberId = member.id;
+    this.clearMemberMessages();
+    const saved = await this.club.updateMemberPositions(member.id, positions, this.auth.csrfToken());
+    if (!saved) this.memberStatusError = this.serverError();
+    this.updatingMemberId = '';
+  }
+  private parsePositions(value: string) { return value.split(',').map((item) => item.trim()).filter(Boolean); }
+  private clearMemberMessages() { this.memberStatusMessage = ''; this.memberStatusError = ''; }
+  private serverError() { return this.i18n.t('Le serveur n’a pas pu enregistrer ce changement. Vérifie ta session.', 'El servidor no pudo guardar este cambio. Comprueba tu sesión.'); }
   private async readPhoto(event: Event): Promise<string> {
     this.photoError = '';
     const input = event.target as HTMLInputElement;

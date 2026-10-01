@@ -1,7 +1,7 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { ClubMember } from '../domain/club.models';
 import { RULES_AGREEMENT_CONFIG } from '../rules-agreement.config';
-import { ADMIN_PASSWORD, ADMIN_USERNAME } from './admin-auth.service';
+import { AdminAuthService } from './admin-auth.service';
 
 export interface RulesAcceptance {
   memberId: string;
@@ -21,6 +21,7 @@ const STORAGE_KEY = 'forestois-rules-acceptances-v1';
 
 @Injectable({ providedIn: 'root' })
 export class RulesAgreementService {
+  private readonly auth = inject(AdminAuthService);
   readonly acceptances = signal<RulesAcceptance[]>(this.load());
   readonly currentAcceptances = computed(() => this.acceptances().filter((item) => item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion));
   readonly apiStatus = signal<'connecting' | 'online' | 'offline'>('connecting');
@@ -80,31 +81,20 @@ export class RulesAgreementService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Token': this.auth.csrfToken(),
         },
         body: JSON.stringify({
           memberId,
           regulationVersion: RULES_AGREEMENT_CONFIG.regulationVersion,
-          adminUsername: ADMIN_USERNAME,
-          adminPassword: ADMIN_PASSWORD,
         }),
       });
       const result = await response.json().catch(() => ({})) as { deleted?: boolean; error?: string };
-      const apiUnavailable = this.apiStatus() === 'offline' || [403, 404, 405].includes(response.status);
-      if (!response.ok && apiUnavailable) {
-        this.removeLocal(memberId);
-        return { removed: true, localOnly: true };
-      }
       if (!response.ok) return { removed: false, error: result.error ?? `Erreur serveur ${response.status}` };
       this.save(this.acceptances().filter((item) => !(item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion)));
       return { removed: true };
     } catch {
-      this.removeLocal(memberId);
-      return { removed: true, localOnly: true };
+      return { removed: false, error: 'Serveur central indisponible.' };
     }
-  }
-
-  private removeLocal(memberId: string): void {
-    this.save(this.acceptances().filter((item) => !(item.memberId === memberId && item.regulationVersion === RULES_AGREEMENT_CONFIG.regulationVersion)));
   }
 
   async exportJson(): Promise<void> {

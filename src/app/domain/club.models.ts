@@ -4,9 +4,12 @@ export interface ClubMember {
   id: string;
   name: string;
   role: TeamRole;
+  active?: boolean;
   number?: number;
   bio?: string;
   photoDataUrl?: string;
+  positions?: string[];
+  /** @deprecated Kept while older locally cached rosters are migrated. */
   position?: string;
   sourceRole?: 'Joueur' | 'Joueur-coach';
   isCoach?: boolean;

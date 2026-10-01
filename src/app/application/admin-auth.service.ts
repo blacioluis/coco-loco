@@ -1,24 +1,58 @@
 import { Injectable, signal } from '@angular/core';
 
-// Prototype only: credentials embedded in a frontend bundle are never secret.
-export const ADMIN_USERNAME = 'forestois';
-export const ADMIN_PASSWORD = 'CocoLoco2026!';
-
 @Injectable({ providedIn: 'root' })
 export class AdminAuthService {
-  readonly authenticated = signal(sessionStorage.getItem('forestois-admin') === 'authenticated');
+  readonly authenticated = signal(false);
+  readonly checking = signal(true);
+  readonly csrfToken = signal('');
 
-  login(username: string, password: string): boolean {
-    const valid = username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
-    if (valid) {
-      sessionStorage.setItem('forestois-admin', 'authenticated');
-      this.authenticated.set(true);
+  constructor() { void this.restore(); }
+
+  async login(username: string, password: string): Promise<boolean> {
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', username, password }),
+      });
+      const result = await response.json() as { authenticated?: boolean; csrfToken?: string };
+      this.apply(result);
+      return response.ok && this.authenticated();
+    } catch {
+      this.apply({});
+      return false;
     }
-    return valid;
   }
 
-  logout(): void {
-    sessionStorage.removeItem('forestois-admin');
-    this.authenticated.set(false);
+  async logout(): Promise<void> {
+    try {
+      await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrfToken() },
+        body: JSON.stringify({ action: 'logout' }),
+      });
+    } finally {
+      this.apply({});
+    }
+  }
+
+  private async restore(): Promise<void> {
+    try {
+      const response = await fetch(this.apiUrl, { cache: 'no-store', headers: { Accept: 'application/json' } });
+      this.apply(response.ok ? await response.json() : {});
+    } catch {
+      this.apply({});
+    } finally {
+      this.checking.set(false);
+    }
+  }
+
+  private apply(result: { authenticated?: boolean; csrfToken?: string }): void {
+    this.authenticated.set(result.authenticated === true);
+    this.csrfToken.set(typeof result.csrfToken === 'string' ? result.csrfToken : '');
+  }
+
+  private get apiUrl(): string {
+    return new URL('api/auth.php', document.baseURI).toString();
   }
 }
