@@ -8,9 +8,33 @@ L’interface est disponible en français et en espagnol sur les mêmes routes. 
 
 La route directe `/#/admin` ouvre un tableau de bord simplifié inspiré des fonctions essentielles de SportEasy. L’authentification est vérifiée par PHP : le mot de passe n’est jamais inclus dans le bundle Angular. La session utilise un cookie `HttpOnly`, un jeton CSRF, une expiration de huit heures et une limitation des essais de connexion.
 
-L’effectif est partagé entre tous les appareils dans `api/data/.members.json`. Le dashboard permet de créer, modifier, supprimer, activer ou désactiver un membre, de gérer son rôle, son numéro et plusieurs postes sous forme de tags. Chaque membre peut recevoir une photo : elle est recadrée, redimensionnée en 384 × 384 px, convertie en WebP puis enregistrée dans `api/uploads/players/`. Les formats JPEG, PNG et WebP sont acceptés, avec une limite de 10 Mo pour le fichier source.
+L’effectif est partagé entre tous les appareils. Le dashboard permet de créer, modifier, supprimer, activer ou désactiver un membre, de gérer son rôle, son numéro et plusieurs postes sous forme de tags. Chaque membre peut recevoir une photo : elle est recadrée, redimensionnée en 384 × 384 px et convertie en WebP. Quand MySQL est configuré, l’image compressée est enregistrée dans la table `player_photos` et servie par `api/player-photo.php`. Sans MySQL, PHP l’enregistre dans le dossier serveur persistant `api/uploads/players/`. Les formats JPEG, PNG et WebP sont acceptés, avec une limite de 10 Mo pour le fichier source.
+
+## Configuration MySQL privée
+
+Le dépôt ne contient jamais le mot de passe MySQL. Après avoir changé le mot de passe exposé dans la capture, copier `api/database.example.php` vers `api/data/database.private.php` directement depuis le gestionnaire de fichiers LWS, puis renseigner les quatre valeurs. Tout le dossier `api/data/` est interdit en accès HTTP et Git ignore ce fichier privé. La table `player_photos` est créée automatiquement lors du premier ajout de photo. Tester ensuite l’ajout d’une photo depuis `/#/admin`, puis vérifier le profil depuis un autre téléphone.
+
+Les événements de l’administration sont également centralisés dans `api/data/.events.json`. Ils ne sont jamais enregistrés dans le navigateur.
+
+### Tirage des responsabilités de match
+
+Dans le dashboard, l’administrateur sélectionne les joueurs réellement convoqués puis lance le tirage des maillots et des boissons. Le serveur privilégie, pour chaque tâche, le plus petit nombre de passages puis le passage le plus ancien. En cas d’égalité, un classement HMAC-SHA256 départage les joueurs. Une même personne ne peut pas recevoir les deux tâches lors du même tirage.
+
+Chaque tentative — y compris une relance — est conservée dans `api/data/.duty-draws.json`. La preuve publique contient l’identifiant du tirage, sa date, les joueurs éligibles, les pools finaux, le seed et l’empreinte SHA-256. Le bouton **Vérifier la preuve** recalcule dans le navigateur l’empreinte et les deux gagnants. L’assignation manuelle reste disponible comme exception et apparaît explicitement comme telle dans le journal.
+
+La liste historique communiquée par l’équipe le 30 septembre 2026 est enregistrée dans `public/data/duty-legacy-history.json` et sert de point de départ à l’équilibrage. Au déploiement, conserver impérativement `.match-duties.json` **et** `.duty-draws.json` sur le serveur.
 
 L’identifiant reste `forestois`. Seul un hash BCrypt du mot de passe est conservé dans `public/api/bootstrap.php`. Pour le changer, générer un nouveau hash BCrypt et remplacer la constante `ADMIN_PASSWORD_HASH` ; ne jamais placer le mot de passe en clair dans Angular.
+
+### E-mails d’équipe
+
+La section **Notifications · E-mail** du dashboard sélectionne uniquement les membres actifs possédant une adresse e-mail valide. Chaque message est envoyé individuellement par `api/notifications.php` afin de ne jamais exposer les adresses des autres joueurs. Les 100 derniers lots d’envoi sont consignés dans `api/data/.mail-history.json` avec l’objet, la date, les destinataires et le nombre de succès ou d’échecs.
+
+L’envoi utilise pour le moment la fonction `mail()` de PHP avec `noreply@coco-loco.be` comme expéditeur et l’adresse du responsable comme `Reply-To`. Il faut donc activer l’envoi PHP dans LWS et idéalement créer cette adresse ou la déclarer dans la configuration mail du domaine. Un retour `sent` signifie que le serveur LWS a accepté le message, pas qu’il a nécessairement atteint la boîte de réception. Vérifier SPF/DKIM dans LWS avant un envoi à toute l’équipe.
+
+### Documents privés
+
+Le coffre du dashboard accepte les PDF, images, documents Word et feuilles Excel jusqu’à 8 Mo. Les fichiers sont placés dans `api/data/documents/`, dont l’accès HTTP direct est interdit, et ne peuvent être téléchargés qu’au travers de `api/documents.php` avec une session administrateur valide. Le registre `api/data/.documents.json` contient uniquement les métadonnées.
 
 ## Effectif SportEasy
 
@@ -64,6 +88,8 @@ Cette configuration LWS lance directement la synchronisation chaque dimanche à 
 
 ## Où poursuivre le développement
 
+Convention obligatoire : chaque composant Angular utilise un trio de fichiers séparés `.ts`, `.html` et `.scss`. Les templates et styles inline sont interdits afin de faciliter la lecture et les petites corrections. Cette règle est également consignée dans `AGENTS.md` pour les prochaines interventions.
+
 - `src/app/domain/` : modèles et contrats des dépôts.
 - `src/app/application/` : façade et règles côté application.
 - `src/app/infrastructure/` : dépôt navigateur et données initiales.
@@ -71,7 +97,7 @@ Cette configuration LWS lance directement la synchronisation chaque dimanche à 
 - `src/styles.scss` : thème, variables et styles partagés.
 - `src/app/brand.config.ts` : couleurs et variantes des blasons.
 
-L’effectif et le registre d’acceptation sont centralisés par les API PHP et des fichiers JSON protégés. Les événements restent pour le moment stockés dans le navigateur.
+L’effectif, les photos, les événements, les responsabilités de match et le registre d’acceptation sont centralisés par les API PHP. Aucune donnée métier n’est enregistrée dans le navigateur.
 
 ## Accord du règlement et registre PHP
 
@@ -86,7 +112,7 @@ Le joueur sélectionne son profil et confirme son accord. L’API `public/api/ag
 
 Prérequis d’hébergement : PHP 8.1 ou plus récent et droit d’écriture PHP sur `api/data/` et `api/uploads/`. Sur un hébergement Apache classique, attribuer au besoin les permissions `775` à ces dossiers depuis le gestionnaire de fichiers. Si le serveur affiche le code source PHP au lieu d’exécuter l’API, ne pas utiliser cette installation avant d’avoir activé PHP.
 
-Pendant `npm start`, Angular ne peut pas exécuter PHP : la page passe volontairement en mode hors ligne et garde les accords dans `localStorage`. Après déploiement sur PHP, les accords locaux sont envoyés au registre central dès que l’API répond.
+Pendant `npm start`, Angular ne peut pas exécuter PHP : les écritures métier sont donc désactivées. Aucun accord, événement, profil ou photo n’est conservé dans `localStorage`. En production, le serveur PHP est l’unique source persistante ; seules les préférences personnelles de langue et de thème restent dans le navigateur.
 
 Le choix d’un nom n’est pas une authentification forte. Pour empêcher l’usurpation, une prochaine étape pourra ajouter un code personnel par joueur ou une connexion sécurisée.
 
@@ -108,6 +134,6 @@ Après suppression, recharger la page du règlement ; le registre serveur est pr
 2. Construire le site avec `npm run build`.
 3. Publier **le contenu du dossier `dist/`** directement dans `/htdocs/`, à la racine du nom de domaine. Ne pas recréer de dossier `coco-loco`.
 
-Le dossier `dist/api/` doit être envoyé avec le reste du build. Lors d’une mise à jour, conserver sur le serveur `api/data/.acceptances.json`, `api/data/.members.json`, `api/data/backups/` et `api/uploads/players/`. Ces éléments ne sont pas générés dans `dist` et ne sont donc pas effacés par un simple transfert qui fusionne les fichiers. Vérifier ensuite que `https://votre-domaine.be/api/agreements.php` et `https://votre-domaine.be/api/members.php` renvoient du JSON, jamais le code source PHP.
+Le dossier `dist/api/` doit être envoyé avec le reste du build. Lors d’une mise à jour, conserver sur le serveur `api/data/database.private.php`, `api/data/.acceptances.json`, `api/data/.members.json`, `api/data/.events.json`, `api/data/.match-duties.json`, `api/data/.duty-draws.json`, `api/data/.mail-history.json`, `api/data/.documents.json`, `api/data/documents/`, `api/data/backups/` et `api/uploads/players/`. Ces éléments ne sont pas générés dans `dist` et ne sont donc pas effacés par un simple transfert qui fusionne les fichiers. Le fichier `.match-duties.json` garde les responsables publiés pour chaque rencontre et `.duty-draws.json` conserve toutes les tentatives de tirage ou assignations manuelles. Vérifier ensuite que `https://votre-domaine.be/api/agreements.php`, `https://votre-domaine.be/api/members.php`, `https://votre-domaine.be/api/events.php` et `https://votre-domaine.be/api/match-duties.php` renvoient du JSON, jamais le code source PHP. Les endpoints privés `api/documents.php` et `api/notifications.php` doivent répondre `401` sans session admin.
 
 Les illustrations et les deux blasons se trouvent dans `public/assets/`. Angular les copie dans `dist/assets/`. Les pages utilisent des chemins relatifs à la base Angular afin qu’ils fonctionnent aussi lorsque l’application est hébergée sous un sous-chemin. Vérifier que le dossier publié contient bien `index.html` et `assets/`.

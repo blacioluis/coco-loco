@@ -1,4 +1,12 @@
-export type TeamRole = 'Coach' | 'Responsable d’équipe' | 'Assistant' | 'Gardien' | 'Défenseur' | 'Milieu' | 'Attaquant' | 'Joueur';
+export type TeamRole =
+  | 'Coach'
+  | 'Responsable d’équipe'
+  | 'Assistant'
+  | 'Gardien'
+  | 'Défenseur'
+  | 'Milieu'
+  | 'Attaquant'
+  | 'Joueur';
 
 export interface ClubMember {
   id: string;
@@ -9,7 +17,7 @@ export interface ClubMember {
   bio?: string;
   photoDataUrl?: string;
   positions?: string[];
-  /** @deprecated Kept while older locally cached rosters are migrated. */
+  /** @deprecated Conservé pour lire les anciennes données importées. */
   position?: string;
   sourceRole?: 'Joueur' | 'Joueur-coach';
   isCoach?: boolean;

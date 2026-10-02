@@ -1,0 +1,829 @@
+<main class="page admin-page">
+  @if (auth.checking()) {
+    <section class="admin-login">
+      <p class="eyebrow">FORESTOIS SC 1</p>
+      <h1>{{ i18n.t('Vérification de la session…', 'Verificando la sesión…') }}</h1>
+    </section>
+  } @else if (!auth.authenticated()) {
+    <section class="admin-login">
+      <img src="assets/club-coco.png" alt="Blason Forestois SC" />
+      <p class="eyebrow">FORESTOIS SC 1</p>
+      <h1>{{ i18n.t('Espace club', 'Área del club') }}</h1>
+      <p>
+        {{
+          i18n.t(
+            'Connectez-vous pour gérer l’équipe et ses événements.',
+            'Inicia sesión para gestionar el equipo y sus eventos.'
+          )
+        }}
+      </p>
+      <form (ngSubmit)="login()">
+        <label
+          >{{ i18n.t('Identifiant', 'Usuario')
+          }}<input name="username" [(ngModel)]="username" autocomplete="username" required /></label
+        ><label
+          >{{ i18n.t('Mot de passe', 'Contraseña')
+          }}<input
+            name="password"
+            [(ngModel)]="password"
+            type="password"
+            autocomplete="current-password"
+            required
+        /></label>
+        @if (loginError) {
+          <span class="login-error">{{
+            i18n.t(
+              'Connexion refusée ou serveur indisponible.',
+              'Acceso denegado o servidor no disponible.'
+            )
+          }}</span>
+        }
+        <button class="button" type="submit" [disabled]="loggingIn">
+          {{
+            loggingIn
+              ? i18n.t('Connexion…', 'Conectando…')
+              : i18n.t('Se connecter', 'Iniciar sesión')
+          }}
+        </button>
+      </form>
+      <small>{{
+        i18n.t('Session sécurisée côté serveur.', 'Sesión segura en el servidor.')
+      }}</small>
+    </section>
+  } @else {
+    <header class="admin-dashboard-head">
+      <div>
+        <p class="eyebrow">{{ i18n.t('TABLEAU DE BORD', 'PANEL DE CONTROL') }}</p>
+        <h1>{{ i18n.t('Bonjour, Forestois.', 'Hola, Forestois.') }}</h1>
+        <p>
+          {{
+            i18n.t(
+              'Gérez les événements et l’effectif depuis un seul endroit.',
+              'Gestiona los eventos y la plantilla desde un solo lugar.'
+            )
+          }}
+        </p>
+      </div>
+      <button class="secondary-button button" type="button" (click)="logout()">
+        {{ i18n.t('Se déconnecter', 'Cerrar sesión') }}
+      </button>
+    </header>
+    <section class="dashboard-stats">
+      <article>
+        <span>{{ i18n.t('ÉVÉNEMENTS', 'EVENTOS') }}</span
+        ><b>{{ events.events().length }}</b
+        ><small>{{ i18n.t('créés par le club', 'creados por el club') }}</small>
+      </article>
+      <article>
+        <span>{{ i18n.t('EFFECTIF ACTIF', 'PLANTILLA ACTIVA') }}</span
+        ><b>{{ club.activeMembers().length }}</b
+        ><small
+          >{{ club.members().length }}
+          {{ i18n.t('membres enregistrés', 'miembros registrados') }}</small
+        >
+      </article>
+      <article>
+        <span>{{ i18n.t('MATCHS', 'PARTIDOS') }}</span
+        ><b>{{ club.fixtures().length }}</b
+        ><small>{{ i18n.t('au calendrier', 'en el calendario') }}</small>
+      </article>
+    </section>
+    <section class="admin-panel duty-admin-panel">
+      @if (club.nextFixture(); as next) {
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">{{ i18n.t('ROTATION DU VESTIAIRE', 'ROTACIÓN DEL VESTUARIO') }}</p>
+            <h2>
+              {{ i18n.t('Responsables du prochain match', 'Responsables del próximo partido') }}
+            </h2>
+            <p class="subtle">
+              {{ i18n.t('Journée', 'Jornada') }} {{ next.round }} · {{ next.opponent }} ·
+              {{ next.date | date: 'd MMMM yyyy' : '' : i18n.locale() }}
+            </p>
+          </div>
+          <span class="count-tag">J{{ next.round }}</span>
+        </div>
+        @if (dutyActionMessage) {
+          <p class="admin-action-message">{{ dutyActionMessage }}</p>
+        }
+        @if (dutyActionError) {
+          <p class="admin-action-error">{{ dutyActionError }}</p>
+        }
+        <div class="duty-draw-builder">
+          <div class="duty-draw-title">
+            <div>
+              <b>{{
+                i18n.t(
+                  '1. Sélectionne les joueurs convoqués',
+                  '1. Selecciona los jugadores convocados'
+                )
+              }}</b
+              ><small>{{
+                i18n.t(
+                  'Seuls ces joueurs participent au tirage.',
+                  'Solo estos jugadores participan en el sorteo.'
+                )
+              }}</small>
+            </div>
+            <div>
+              <span>{{ selectedDutyCandidateIds.size }} / {{ dutyCandidates.length }}</span
+              ><button type="button" (click)="toggleAllDutyCandidates()">
+                {{
+                  allDutyCandidatesSelected ? i18n.t('Vider', 'Vaciar') : i18n.t('Tous', 'Todos')
+                }}
+              </button>
+            </div>
+          </div>
+          <div class="duty-candidate-grid">
+            @for (person of dutyCandidates; track person.id) {
+              <button
+                type="button"
+                [class.selected]="selectedDutyCandidateIds.has(person.id)"
+                (click)="toggleDutyCandidate(person.id)"
+              >
+                @if (person.photoDataUrl) {
+                  <img [src]="person.photoDataUrl" [alt]="person.name" />
+                } @else {
+                  <span>{{ initials(person.name) }}</span>
+                }
+                <b>{{ person.name }}</b
+                ><i>{{ selectedDutyCandidateIds.has(person.id) ? '✓' : '+' }}</i>
+              </button>
+            }
+          </div>
+          <div class="duty-draw-action">
+            <div>
+              <b>{{ i18n.t('2. Lance le tirage équitable', '2. Inicia el sorteo equitativo') }}</b
+              ><small>{{
+                i18n.t(
+                  'Priorité à ceux qui ont le moins souvent réalisé chaque tâche.',
+                  'Prioridad para quienes menos veces realizaron cada tarea.'
+                )
+              }}</small>
+              @if (selectedDutyCandidateIds.size < 2) {
+                <em>{{
+                  i18n.t(
+                    'Sélectionne au moins deux joueurs pour activer le bouton.',
+                    'Selecciona al menos dos jugadores para activar el botón.'
+                  )
+                }}</em>
+              }
+            </div>
+            <button
+              class="button"
+              type="button"
+              (click)="drawNextDuty()"
+              [disabled]="drawingDuty() || selectedDutyCandidateIds.size < 2"
+            >
+              {{
+                drawingDuty()
+                  ? i18n.t('Tirage en cours…', 'Sorteo en curso…')
+                  : i18n.t('Lancer la roulette', 'Lanzar la ruleta') + ' →'
+              }}
+            </button>
+          </div>
+          @if (drawingDuty() || rouletteName()) {
+            <div class="duty-roulette-overlay" role="status" aria-live="polite">
+              <div class="duty-roulette" [class.finished]="!drawingDuty()">
+                <div class="roulette-disc"><span>SCF</span></div>
+                <span>{{
+                  drawingDuty()
+                    ? i18n.t('LA ROULETTE TOURNE', 'LA RULETA GIRA')
+                    : i18n.t('TIRAGE ENREGISTRÉ', 'SORTEO REGISTRADO')
+                }}</span
+                ><strong>{{ rouletteName() }}</strong
+                ><small>{{
+                  drawingDuty()
+                    ? i18n.t(
+                        'Le serveur calcule le résultat vérifiable…',
+                        'El servidor calcula el resultado verificable…'
+                      )
+                    : i18n.t(
+                        'La preuve est conservée dans l’historique.',
+                        'La prueba se conserva en el historial.'
+                      )
+                }}</small>
+                @if (!drawingDuty()) {
+                  <button class="button" type="button" (click)="closeRoulette()">
+                    {{ i18n.t('Voir les responsables', 'Ver los responsables') }} →
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+        <details class="manual-duty-assignment">
+          <summary>
+            {{ i18n.t('Assigner manuellement (exception)', 'Asignar manualmente (excepción)') }}
+          </summary>
+          <form class="duty-admin-form" (ngSubmit)="saveNextDuty()">
+            <label
+              ><span class="admin-duty-icon kits">♟</span
+              ><span
+                ><b>{{ i18n.t('Responsable des maillots', 'Responsable de las equipaciones') }}</b
+                ><small>{{
+                  i18n.t(
+                    'Transporter et ramener les équipements',
+                    'Llevar y devolver las equipaciones'
+                  )
+                }}</small></span
+              ><select name="dutyKitsMemberId" [(ngModel)]="dutyKitsMemberId" required>
+                <option value="" disabled>
+                  {{ i18n.t('Choisir un joueur', 'Elegir un jugador') }}
+                </option>
+                @for (person of dutyCandidates; track person.id) {
+                  <option [value]="person.id">{{ person.name }}</option>
+                }
+              </select></label
+            ><label
+              ><span class="admin-duty-icon drinks">✦</span
+              ><span
+                ><b>{{ i18n.t('Responsable des boissons', 'Responsable de las bebidas') }}</b
+                ><small>{{
+                  i18n.t('Boissons apportées froides', 'Bebidas entregadas frías')
+                }}</small></span
+              ><select name="dutyDrinksMemberId" [(ngModel)]="dutyDrinksMemberId" required>
+                <option value="" disabled>
+                  {{ i18n.t('Choisir un joueur', 'Elegir un jugador') }}
+                </option>
+                @for (person of dutyCandidates; track person.id) {
+                  <option [value]="person.id">{{ person.name }}</option>
+                }
+              </select></label
+            ><button
+              class="button"
+              type="submit"
+              [disabled]="savingDuty || !dutyKitsMemberId || !dutyDrinksMemberId"
+            >
+              {{
+                savingDuty
+                  ? i18n.t('Enregistrement…', 'Guardando…')
+                  : i18n.t('Enregistrer manuellement', 'Guardar manualmente') + ' →'
+              }}
+            </button>
+          </form>
+        </details>
+        @if (duties.draws().length) {
+          <div class="admin-duty-history">
+            <h3>
+              {{
+                i18n.t('Journal des tirages et assignations', 'Registro de sorteos y asignaciones')
+              }}
+            </h3>
+            @for (draw of duties.draws(); track draw.proof.drawId) {
+              <article>
+                <span>J{{ draw.round }}</span>
+                <div>
+                  <b
+                    >{{ draw.fixtureDate | date: 'd MMM yyyy' : '' : i18n.locale() }} ·
+                    {{
+                      draw.proof.type === 'draw'
+                        ? i18n.t('Tirage', 'Sorteo')
+                        : i18n.t('Manuel', 'Manual')
+                    }}
+                    #{{ draw.proof.drawId }}</b
+                  ><small
+                    >♟ {{ dutyName(draw.kitsMemberId, draw.kitsMemberName) }} · ✦
+                    {{ dutyName(draw.drinksMemberId, draw.drinksMemberName) }}</small
+                  >
+                </div>
+              </article>
+            }
+          </div>
+        }
+      } @else {
+        <div class="empty-inline">
+          {{ i18n.t('Aucun prochain match à attribuer.', 'No hay próximo partido para asignar.') }}
+        </div>
+      }
+    </section>
+    <section class="admin-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('AGENDA DU CLUB', 'AGENDA DEL CLUB') }}</p>
+          <h2>{{ i18n.t('Créer un événement', 'Crear un evento') }}</h2>
+        </div>
+      </div>
+      @if (eventActionError) {
+        <p class="admin-action-error">{{ eventActionError }}</p>
+      }
+      @if (eventActionMessage) {
+        <p class="admin-action-message">{{ eventActionMessage }}</p>
+      }
+      <form (ngSubmit)="addEvent()" class="event-form">
+        <label
+          >{{ i18n.t('Titre', 'Título')
+          }}<input name="eventTitle" [(ngModel)]="eventTitle" required /></label
+        ><label
+          >{{ i18n.t('Type', 'Tipo')
+          }}<select name="eventType" [(ngModel)]="eventType">
+            @for (type of eventTypes; track type) {
+              <option [ngValue]="type">{{ eventTypeLabel(type) }}</option>
+            }
+          </select></label
+        ><label
+          >{{ i18n.t('Date', 'Fecha')
+          }}<input name="eventDate" [(ngModel)]="eventDate" type="date" required /></label
+        ><label
+          >{{ i18n.t('Heure', 'Hora')
+          }}<input name="eventTime" [(ngModel)]="eventTime" type="time" required /></label
+        ><label class="event-wide"
+          >{{ i18n.t('Lieu', 'Lugar')
+          }}<input name="eventLocation" [(ngModel)]="eventLocation" required /></label
+        ><label class="event-wide"
+          >{{ i18n.t('Description', 'Descripción')
+          }}<textarea
+            name="eventDescription"
+            [(ngModel)]="eventDescription"
+            rows="3"
+          ></textarea></label
+        ><button class="button" type="submit" [disabled]="savingEvent">
+          {{
+            savingEvent
+              ? i18n.t('Publication…', 'Publicando…')
+              : i18n.t('Publier l’événement', 'Publicar el evento') + ' ＋'
+          }}
+        </button>
+      </form>
+    </section>
+    <section class="admin-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('ÉVÉNEMENTS', 'EVENTOS') }}</p>
+          <h2>{{ i18n.t('Agenda à venir', 'Próxima agenda') }}</h2>
+        </div>
+        <span class="count-tag">{{ events.events().length }}</span>
+      </div>
+      @if (events.events().length) {
+        <div class="event-list">
+          @for (event of events.events(); track event.id) {
+            <article>
+              <time
+                ><b>{{ event.date | date: 'd' : '' : i18n.locale() }}</b
+                ><span>{{ event.date | date: 'MMM' : '' : i18n.locale() }}</span></time
+              >
+              <div>
+                <small>{{ eventTypeLabel(event.type) }} · {{ event.time }}</small>
+                <h3>{{ event.title }}</h3>
+                <p>
+                  {{ event.location }}
+                  @if (event.description) {
+                    · {{ event.description }}
+                  }
+                </p>
+              </div>
+              <button class="remove-button" type="button" (click)="removeEvent(event.id)">
+                {{ i18n.t('Supprimer', 'Eliminar') }}
+              </button>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-inline">
+          {{
+            i18n.t('Aucun événement créé pour le moment.', 'No hay eventos creados por el momento.')
+          }}
+        </div>
+      }
+    </section>
+    <section class="admin-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('RÈGLEMENT', 'REGLAMENTO') }}</p>
+          <h2>{{ i18n.t('Accords enregistrés', 'Acuerdos registrados') }}</h2>
+          <p class="subtle">
+            {{
+              i18n.t(
+                'Supprimez ici une acceptation enregistrée par erreur.',
+                'Elimina aquí una aceptación registrada por error.'
+              )
+            }}
+          </p>
+        </div>
+        <span class="count-tag">{{ agreements.currentAcceptances().length }}</span>
+      </div>
+      @if (agreementDeleteError) {
+        <p class="admin-action-error">{{ agreementDeleteError }}</p>
+      }
+      @if (agreementActionMessage) {
+        <p class="admin-action-message">{{ agreementActionMessage }}</p>
+      }
+      @if (agreements.currentAcceptances().length) {
+        <div class="admin-agreements">
+          @for (acceptance of agreements.currentAcceptances(); track acceptance.memberId) {
+            <article>
+              <div>
+                <b>{{ acceptance.memberName }}</b
+                ><small
+                  >{{ i18n.t('Accepté le', 'Aceptado el') }}
+                  {{
+                    acceptance.acceptedAt | date: 'd MMMM yyyy, HH:mm' : '' : i18n.locale()
+                  }}</small
+                >
+              </div>
+              <button
+                class="remove-button"
+                type="button"
+                [disabled]="deletingAgreementId === acceptance.memberId"
+                (click)="removeAgreement(acceptance)"
+              >
+                {{
+                  deletingAgreementId === acceptance.memberId
+                    ? i18n.t('Suppression…', 'Eliminando…')
+                    : i18n.t('Supprimer l’accord', 'Eliminar acuerdo')
+                }}
+              </button>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-inline">
+          {{ i18n.t('Aucun accord enregistré.', 'No hay acuerdos registrados.') }}
+        </div>
+      }
+    </section>
+    <section class="admin-panel notification-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('NOTIFICATIONS · E-MAIL', 'NOTIFICACIONES · E-MAIL') }}</p>
+          <h2>{{ i18n.t('Envoyer un message à l’équipe', 'Enviar un mensaje al equipo') }}</h2>
+          <p class="subtle">
+            {{
+              i18n.t(
+                'Chaque destinataire reçoit un e-mail individuel : les autres adresses restent privées.',
+                'Cada destinatario recibe un correo individual: las demás direcciones siguen siendo privadas.'
+              )
+            }}
+          </p>
+        </div>
+        <span class="count-tag">{{ selectedEmailIds.size }} / {{ emailableMembers.length }}</span>
+      </div>
+      @if (emailActionMessage) {
+        <p class="admin-action-message">{{ emailActionMessage }}</p>
+      }
+      @if (emailActionError) {
+        <p class="admin-action-error">{{ emailActionError }}</p>
+      }
+      @if (emailableMembers.length) {
+        <div class="recipient-toolbar">
+          <b>{{ i18n.t('Destinataires', 'Destinatarios') }}</b
+          ><button type="button" class="secondary-button" (click)="toggleAllEmailRecipients()">
+            {{
+              allEmailRecipientsSelected
+                ? i18n.t('Tout désélectionner', 'Deseleccionar todo')
+                : i18n.t('Sélectionner tout', 'Seleccionar todo')
+            }}
+          </button>
+        </div>
+        <div class="recipient-grid">
+          @for (person of emailableMembers; track person.id) {
+            <button
+              type="button"
+              [class.selected]="selectedEmailIds.has(person.id)"
+              (click)="toggleEmailRecipient(person.id)"
+            >
+              @if (person.photoDataUrl) {
+                <img [src]="person.photoDataUrl" [alt]="person.name" />
+              } @else {
+                <span>{{ initials(person.name) }}</span>
+              }
+              <span
+                ><b>{{ person.name }}</b
+                ><small>{{ person.email }}</small></span
+              ><i>{{ selectedEmailIds.has(person.id) ? '✓' : '+' }}</i>
+            </button>
+          }
+        </div>
+        <form class="notification-form" (ngSubmit)="sendEmail()">
+          <label
+            >{{ i18n.t('Objet', 'Asunto')
+            }}<input
+              name="emailSubject"
+              [(ngModel)]="emailSubject"
+              maxlength="140"
+              required /></label
+          ><label
+            >{{ i18n.t('Message', 'Mensaje')
+            }}<textarea
+              name="emailMessage"
+              [(ngModel)]="emailMessage"
+              rows="6"
+              maxlength="5000"
+              required
+            ></textarea></label
+          ><button class="button" type="submit" [disabled]="sendingEmail || !selectedEmailIds.size">
+            {{
+              sendingEmail
+                ? i18n.t('Envoi…', 'Enviando…')
+                : i18n.t('Envoyer les e-mails', 'Enviar los correos') + ' →'
+            }}
+          </button>
+        </form>
+      } @else {
+        <div class="empty-inline">
+          {{
+            i18n.t(
+              'Ajoute d’abord une adresse e-mail aux profils des joueurs concernés.',
+              'Añade primero una dirección de correo a los perfiles de los jugadores correspondientes.'
+            )
+          }}
+        </div>
+      }
+      @if (emailNotifications.history().length) {
+        <div class="email-history">
+          <h3>{{ i18n.t('Derniers envois', 'Últimos envíos') }}</h3>
+          @for (item of emailNotifications.history().slice(0, 5); track item.id) {
+            <article>
+              <div>
+                <b>{{ item.subject }}</b
+                ><small
+                  >{{ item.createdAt | date: 'd MMM yyyy, HH:mm' : '' : i18n.locale() }} ·
+                  {{ item.recipients.join(', ') }}</small
+                >
+              </div>
+              <span
+                >{{ item.sent }} ✓
+                @if (item.failed) {
+                  · {{ item.failed }} !
+                }
+              </span>
+            </article>
+          }
+        </div>
+      }
+    </section>
+    <section class="admin-panel documents-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('DOCUMENTS PRIVÉS', 'DOCUMENTOS PRIVADOS') }}</p>
+          <h2>{{ i18n.t('Le coffre de l’équipe', 'El archivo del equipo') }}</h2>
+          <p class="subtle">
+            {{
+              i18n.t(
+                'Feuilles de match, matériel et informations internes. Le téléchargement exige une session admin.',
+                'Actas, material e información interna. La descarga requiere una sesión de administrador.'
+              )
+            }}
+          </p>
+        </div>
+        <span class="count-tag">{{ documents.documents().length }}</span>
+      </div>
+      @if (documentActionMessage) {
+        <p class="admin-action-message">{{ documentActionMessage }}</p>
+      }
+      @if (documentActionError) {
+        <p class="admin-action-error">{{ documentActionError }}</p>
+      }
+      <form class="document-upload" (ngSubmit)="uploadDocument()">
+        <label
+          >{{ i18n.t('Titre', 'Título')
+          }}<input
+            name="documentTitle"
+            [(ngModel)]="documentTitle"
+            [placeholder]="i18n.t('Ex. Feuille de match J6', 'Ej. Acta del partido J6')" /></label
+        ><label class="document-file"
+          >{{ i18n.t('Fichier', 'Archivo')
+          }}<input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
+            (change)="selectDocument($event)"
+          /><span>{{
+            selectedDocument?.name || i18n.t('Choisir un fichier', 'Elegir un archivo')
+          }}</span></label
+        ><button class="button" type="submit" [disabled]="uploadingDocument || !selectedDocument">
+          {{
+            uploadingDocument
+              ? i18n.t('Envoi…', 'Subiendo…')
+              : i18n.t('Ajouter au coffre', 'Añadir al archivo') + ' ＋'
+          }}
+        </button>
+      </form>
+      @if (documents.documents().length) {
+        <div class="document-list">
+          @for (document of documents.documents(); track document.id) {
+            <article>
+              <span class="document-icon">{{ documentExtension(document) }}</span>
+              <div>
+                <b>{{ document.title }}</b
+                ><small
+                  >{{ document.originalName }} · {{ formatBytes(document.size) }} ·
+                  {{ document.uploadedAt | date: 'd MMM yyyy' : '' : i18n.locale() }}</small
+                >
+              </div>
+              <a class="secondary-button" [href]="documents.downloadUrl(document.id)"
+                >{{ i18n.t('Télécharger', 'Descargar') }} ↓</a
+              ><button class="remove-button" type="button" (click)="removeDocument(document)">
+                {{ i18n.t('Supprimer', 'Eliminar') }}
+              </button>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-inline">
+          {{
+            i18n.t('Aucun document privé pour le moment.', 'No hay documentos privados por ahora.')
+          }}
+        </div>
+      }
+    </section>
+    <section class="admin-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('EFFECTIF', 'PLANTILLA') }}</p>
+          <h2>{{ i18n.t('Ajouter un membre', 'Añadir un miembro') }}</h2>
+          <p class="subtle">
+            {{
+              i18n.t(
+                'Les profils sont partagés sur tous les appareils. Un joueur peut avoir plusieurs postes.',
+                'Los perfiles se comparten en todos los dispositivos. Un jugador puede tener varias posiciones.'
+              )
+            }}
+          </p>
+        </div>
+      </div>
+      <form (ngSubmit)="add()" class="member-form">
+        <label
+          >{{ i18n.t('Nom complet', 'Nombre completo')
+          }}<input name="name" [(ngModel)]="name" required
+        /></label>
+        <label
+          >{{ i18n.t('Rôle', 'Rol')
+          }}<select name="role" [(ngModel)]="role">
+            @for (item of roles; track item) {
+              <option [ngValue]="item">{{ i18n.role(item) }}</option>
+            }
+          </select></label
+        >
+        <label
+          >{{ i18n.t('Numéro', 'Número')
+          }}<input name="number" [(ngModel)]="number" type="number" min="1" max="99"
+        /></label>
+        <label
+          >{{ i18n.t('E-mail', 'Correo')
+          }}<input
+            name="email"
+            [(ngModel)]="email"
+            type="email"
+            autocomplete="off"
+            placeholder="joueur@exemple.be"
+        /></label>
+        <label
+          >{{ i18n.t('Postes (séparés par des virgules)', 'Posiciones (separadas por comas)')
+          }}<input
+            name="positions"
+            [(ngModel)]="positions"
+            [placeholder]="i18n.t('Ex. Ailier, Attaquant', 'Ej. Extremo, Delantero')"
+        /></label>
+        <label class="photo-field"
+          >{{ i18n.t('Photo', 'Foto')
+          }}<input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            (change)="selectNewPhoto($event)"
+          /><small>{{
+            i18n.t('Compression WebP automatique', 'Compresión WebP automática')
+          }}</small></label
+        >
+        @if (newPhoto) {
+          <img class="photo-preview" [src]="newPhoto" alt="" />
+        }
+        <button class="button" type="submit" [disabled]="savingMember">
+          {{
+            savingMember
+              ? i18n.t('Enregistrement…', 'Guardando…')
+              : i18n.t('Ajouter', 'Añadir') + ' ＋'
+          }}
+        </button>
+      </form>
+      @if (photoError) {
+        <p class="photo-error">{{ photoError }}</p>
+      }
+      @if (memberStatusMessage) {
+        <p class="admin-action-message">{{ memberStatusMessage }}</p>
+      }
+      @if (memberStatusError) {
+        <p class="admin-action-error">{{ memberStatusError }}</p>
+      }
+      <div class="admin-members">
+        @for (person of club.members(); track person.id) {
+          <div class="admin-member" [class.inactive]="person.active === false">
+            <div class="admin-member-identity">
+              @if (person.photoDataUrl) {
+                <img class="member-avatar" [src]="person.photoDataUrl" [alt]="person.name" />
+              } @else {
+                <span class="role-symbol">{{ person.name.slice(0, 1) }}</span>
+              }
+              <span
+                ><b
+                  >{{ person.name }}
+                  <i class="member-status" [class.off]="person.active === false">{{
+                    person.active === false
+                      ? i18n.t('INACTIF', 'INACTIVO')
+                      : i18n.t('ACTIF', 'ACTIVO')
+                  }}</i></b
+                ><small
+                  >{{
+                    person.sourceRole === 'Joueur-coach'
+                      ? i18n.t('Joueur-coach', 'Jugador-entrenador')
+                      : i18n.role(person.role)
+                  }}{{ person.number ? ' · #' + person.number : '' }}</small
+                ></span
+              >
+            </div>
+            @if (editingMemberId === person.id) {
+              <div class="admin-member-editor">
+                <input
+                  [(ngModel)]="editName"
+                  [name]="'edit-name-' + person.id"
+                  [placeholder]="i18n.t('Nom complet', 'Nombre completo')"
+                /><select [(ngModel)]="editRole" [name]="'edit-role-' + person.id">
+                  @for (item of roles; track item) {
+                    <option [ngValue]="item">{{ i18n.role(item) }}</option>
+                  }</select
+                ><input
+                  [(ngModel)]="editNumber"
+                  [name]="'edit-number-' + person.id"
+                  type="number"
+                  min="1"
+                  max="99"
+                  [placeholder]="i18n.t('Numéro', 'Número')"
+                /><input
+                  [(ngModel)]="editEmail"
+                  [name]="'edit-email-' + person.id"
+                  type="email"
+                  placeholder="E-mail"
+                /><button type="button" class="button" (click)="saveMemberDetails(person)">
+                  {{ i18n.t('Enregistrer', 'Guardar') }}</button
+                ><button type="button" class="remove-button" (click)="editingMemberId = ''">
+                  {{ i18n.t('Annuler', 'Cancelar') }}
+                </button>
+              </div>
+            }
+            <div class="admin-position-editor">
+              <div class="position-tags">
+                @for (position of memberPositions(person); track position) {
+                  <span
+                    >{{ position }}
+                    <button
+                      type="button"
+                      [attr.aria-label]="i18n.t('Retirer ', 'Quitar ') + position"
+                      (click)="removePosition(person, position)"
+                    >
+                      ×
+                    </button></span
+                  >
+                } @empty {
+                  <small>{{ i18n.t('Aucun poste précis', 'Sin posición específica') }}</small>
+                }
+              </div>
+              <div>
+                <input
+                  [name]="'position-' + person.id"
+                  [(ngModel)]="positionInputs[person.id]"
+                  [placeholder]="i18n.t('Ajouter un poste', 'Añadir posición')"
+                  (keyup.enter)="addPosition(person)"
+                /><button type="button" (click)="addPosition(person)">＋</button>
+              </div>
+            </div>
+            <div class="member-actions">
+              <button class="secondary-button" type="button" (click)="editMember(person)">
+                {{ i18n.t('Modifier', 'Editar') }}</button
+              ><button
+                class="status-toggle-button"
+                [class.activate]="person.active === false"
+                type="button"
+                [disabled]="updatingMemberId === person.id"
+                (click)="toggleMemberStatus(person)"
+              >
+                {{
+                  updatingMemberId === person.id
+                    ? i18n.t('Enregistrement…', 'Guardando…')
+                    : person.active === false
+                      ? i18n.t('Réactiver', 'Reactivar')
+                      : i18n.t('Désactiver', 'Desactivar')
+                }}</button
+              ><label class="photo-button"
+                >{{
+                  person.photoDataUrl
+                    ? i18n.t('Remplacer', 'Cambiar')
+                    : i18n.t('Ajouter une photo', 'Añadir foto')
+                }}<input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  (change)="replacePhoto(person.id, $event)"
+              /></label>
+              @if (person.photoDataUrl) {
+                <button class="remove-button" type="button" (click)="removePhoto(person.id)">
+                  {{ i18n.t('Retirer la photo', 'Quitar foto') }}
+                </button>
+              }
+              <button class="remove-button" type="button" (click)="remove(person)">
+                {{ i18n.t('Supprimer', 'Eliminar') }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</main>

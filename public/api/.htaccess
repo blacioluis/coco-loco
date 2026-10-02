@@ -2,6 +2,10 @@
   Require all denied
 </Files>
 
+<Files "database.private.php">
+  Require all denied
+</Files>
+
 <FilesMatch "^\.">
   Require all denied
 </FilesMatch>

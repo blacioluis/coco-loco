@@ -3,6 +3,44 @@ declare(strict_types=1);
 
 const ADMIN_USERNAME = 'forestois';
 const ADMIN_PASSWORD_HASH = '$2y$12$/AKv4oo83gjC2uizWi04/ObLwktKPih0Gr7Cy7vAGAkCYMN1ayT/e';
+const MAIL_FROM_EMAIL = 'noreply@coco-loco.be';
+const MAIL_FROM_NAME = 'Forestois SC 1';
+const MAIL_REPLY_TO = 'patj.scf@gmail.com';
+
+function apiDatabase(): ?PDO {
+    static $connectionResolved = false;
+    static $connection = null;
+    if ($connectionResolved) return $connection;
+    $connectionResolved = true;
+    $configFile = __DIR__ . '/data/database.private.php';
+    $config = is_file($configFile) ? require $configFile : [];
+    if (!is_array($config)) $config = [];
+    $host = (string) ($config['host'] ?? getenv('FORESTOIS_DB_HOST') ?: '');
+    $database = (string) ($config['database'] ?? getenv('FORESTOIS_DB_NAME') ?: '');
+    $username = (string) ($config['username'] ?? getenv('FORESTOIS_DB_USER') ?: '');
+    $password = (string) ($config['password'] ?? getenv('FORESTOIS_DB_PASSWORD') ?: '');
+    if ($host === '' || $database === '' || $username === '') return null;
+    try {
+        $connection = new PDO(
+            "mysql:host={$host};dbname={$database};charset=utf8mb4",
+            $username,
+            $password,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false]
+        );
+        return $connection;
+    } catch (Throwable) {
+        return null;
+    }
+}
+
+function apiEnsurePlayerPhotosTable(PDO $database): void {
+    $database->exec('CREATE TABLE IF NOT EXISTS player_photos (
+        member_id VARCHAR(80) NOT NULL PRIMARY KEY,
+        mime_type VARCHAR(40) NOT NULL,
+        image_data MEDIUMBLOB NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+}
 
 function apiStartSession(): void {
     if (session_status() === PHP_SESSION_ACTIVE) return;

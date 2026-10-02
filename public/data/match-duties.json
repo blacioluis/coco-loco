@@ -1,0 +1,17 @@
+[
+  {
+    "round": 6,
+    "fixtureDate": "2026-10-03",
+    "kitsMemberId": "luis-blacio",
+    "kitsMemberName": "Luis Blacio",
+    "drinksMemberId": "nasr-eddine-zabata",
+    "drinksMemberName": "Nasr-Eddine Zabata",
+    "updatedAt": "2026-10-01T08:00:00Z",
+    "proof": {
+      "type": "manual",
+      "drawId": "MAN-INITIAL",
+      "performedAt": "2026-10-01T08:00:00Z",
+      "algorithm": "assignation-manuelle"
+    }
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "source": "Liste historique communiquée par l’équipe le 30 septembre 2026",
+  "kits": [
+    { "memberId": "cristian-nunez", "memberName": "Cristian Nunez" },
+    { "memberId": "joseph-villarroel", "memberName": "Joseph Villarroel" },
+    { "memberId": "christian-suntaxi", "memberName": "Christian Suntaxi" },
+    { "memberId": "antoine-vandevreye", "memberName": "Antoine Vandevreye" },
+    { "memberId": "tito-jhovanny-cedeno-astudillo", "memberName": "Tito Jhovanny Cedeño Astudillo" },
+    { "memberId": "francisco-diaz", "memberName": "Francisco Diaz" },
+    { "memberId": "luis-blacio", "memberName": "Luis Blacio" }
+  ],
+  "drinks": [
+    { "memberId": "luis-blacio", "memberName": "Luis Blacio" },
+    { "memberId": "henrry-trivino", "memberName": "Henrry Triviño" },
+    { "memberId": "jarol-garcia", "memberName": "Jarol Garcia" },
+    { "memberId": "antoine-vandevreye", "memberName": "Antoine Vandevreye" },
+    { "memberId": "nasr-eddine-zabata", "memberName": "Nasr-Eddine Zabata" }
+  ]
+}

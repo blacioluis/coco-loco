@@ -1,0 +1,178 @@
+<main class="home-page">
+  <section class="hero-banner">
+    <img
+      class="hero-background"
+      src="assets/hero-pitch.png"
+      alt="Terrain de football à la lumière du soir"
+    />
+    <div class="hero-overlay"></div>
+    <div class="hero-copy">
+      <p>{{ i18n.t('PLUS QU’UN CLUB', 'MÁS QUE UN CLUB') }}</p>
+      <h1>FORESTOIS SC 1</h1>
+      <strong>{{ i18n.t('FOOTBALL · AMITIÉ · PASSION', 'FÚTBOL · AMISTAD · PASIÓN') }}</strong
+      ><span>D4C · {{ i18n.t('SAISON', 'TEMPORADA') }} 2026 / 2027</span>
+    </div>
+    <img
+      class="hero-ball"
+      src="assets/football-detail.png"
+      alt="Illustration d’un ballon au bord du terrain"
+    />
+  </section>
+  <div class="home-content">
+    <div class="feature-grid">
+      @if (club.nextFixture(); as next) {
+        <section class="featured-match">
+          <div class="feature-header">
+            <div>
+              <p class="eyebrow">
+                {{ i18n.t('PROCHAIN MATCH', 'PRÓXIMO PARTIDO') }}
+                <span class="round">{{ i18n.t('JOURNÉE', 'JORNADA') }} {{ next.round }}</span>
+              </p>
+              <h2>{{ i18n.t('Place au match.', 'Es hora de jugar.') }}</h2>
+            </div>
+            <div class="feature-date">
+              <b>{{ next.date | date: 'd' : '' : i18n.locale() }}</b
+              ><span>{{ next.date | date: 'MMM' : '' : i18n.locale() }}</span
+              ><small>{{ next.time }}</small>
+            </div>
+          </div>
+          <div class="opponents">
+            <div class="opponent">
+              <app-team-avatar
+                [name]="next.home ? 'FORESTOIS SC 1' : next.opponent"
+                [own]="next.home"
+              /><b>{{ next.home ? 'FORESTOIS SC 1' : next.opponent }}</b>
+            </div>
+            <div class="versus-mark">VS</div>
+            <div class="opponent">
+              <app-team-avatar
+                [name]="next.home ? next.opponent : 'FORESTOIS SC 1'"
+                [own]="!next.home"
+              /><b>{{ next.home ? next.opponent : 'FORESTOIS SC 1' }}</b>
+            </div>
+          </div>
+          <div class="match-location">
+            <span>⌖</span>
+            <div>
+              <b>{{ next.venue }}</b
+              ><small>{{ next.address }}</small>
+            </div>
+            <a
+              [href]="
+                'https://www.google.com/maps/search/?api=1&query=' +
+                encodeURIComponent(next.address)
+              "
+              target="_blank"
+              rel="noreferrer"
+              >{{ i18n.t('Itinéraire', 'Cómo llegar') }} ↗</a
+            >
+          </div>
+          @if (duties.forFixture(next.round, next.date); as duty) {
+            <app-match-duty-card [duty]="duty" />
+          }
+        </section>
+      }
+      @if (club.forestoisStanding(); as standing) {
+        <aside class="standings-card">
+          <img class="standings-crest" src="assets/club-coco.png" alt="Blason Forestois SC" />
+          <div class="standings-top">
+            <p>ABSSA · DIVISION 4C</p>
+            <span
+              >{{ i18n.t('APRÈS', 'TRAS') }} {{ standing.played }}
+              {{ i18n.t('JOURNÉES', 'JORNADAS') }}</span
+            >
+          </div>
+          <div class="rank-display">
+            <strong
+              >1<sup>{{ i18n.t('er', 'º') }}</sup></strong
+            >
+            <div>
+              <small>{{ i18n.t('CLASSEMENT', 'CLASIFICACIÓN') }}</small
+              ><b>{{ standing.points }} points</b>
+            </div>
+          </div>
+          <div class="season-stats">
+            <span
+              ><b>{{ standing.wins }}</b> {{ i18n.t('victoires', 'victorias') }}</span
+            ><span
+              ><b>{{ standing.draws }}</b> {{ i18n.t('nul', 'empates') }}</span
+            ><span
+              ><b>{{ standing.losses }}</b> {{ i18n.t('défaite', 'derrotas') }}</span
+            >
+          </div>
+          <div class="goal-difference">
+            {{ i18n.t('DIFFÉRENCE DE BUTS', 'DIFERENCIA DE GOLES') }}
+            <b>+{{ standing.goalDifference }}</b>
+          </div>
+        </aside>
+      }
+    </div>
+    <app-standings-table />
+    <section class="club-cards-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('VIVRE LE CLUB', 'VIVIR EL CLUB') }}</p>
+          <h2>
+            {{
+              i18n.t(
+                'Forestois, sur et en dehors du terrain.',
+                'Forestois, dentro y fuera del campo.'
+              )
+            }}
+          </h2>
+        </div>
+        <a
+          class="source-link"
+          href="https://www.calabssa.be/c/152_1_forestois_sc/"
+          target="_blank"
+          rel="noreferrer"
+          >{{ i18n.t('Voir CalABSSA', 'Ver CalABSSA') }} ↗</a
+        >
+      </div>
+      <div class="visual-cards">
+        <a routerLink="/equipe" class="visual-card"
+          ><img src="assets/team-photo.jpg" alt="Photo de l’équipe Forestois SC 1" /><span
+            class="visual-card-shade"
+          ></span
+          ><span class="visual-card-copy"
+            ><small>{{ i18n.t('LES VISAGES DU CLUB', 'LAS CARAS DEL CLUB') }}</small
+            ><b>{{ i18n.t('L’équipe', 'El equipo') }}</b
+            ><span
+              >{{ i18n.t('Joueurs & encadrement', 'Jugadores y cuerpo técnico') }} <i>↗</i></span
+            ></span
+          ></a
+        ><a routerLink="/matchs" class="visual-card"
+          ><img
+            src="assets/football-detail.png"
+            alt="Illustration d’un ballon posé sur la pelouse"
+          /><span class="visual-card-shade"></span
+          ><span class="visual-card-copy"
+            ><small>{{ i18n.t('SAISON', 'TEMPORADA') }} 2026 / 2027</small
+            ><b>{{ i18n.t('Les matchs', 'Los partidos') }}</b
+            ><span
+              >{{ i18n.t('Calendrier & terrains', 'Calendario y campos') }} <i>↗</i></span
+            ></span
+          ></a
+        ><a routerLink="/instagram" class="visual-card"
+          ><img
+            src="assets/hero-pitch.png"
+            alt="Illustration d’un terrain de football à la lumière du soir"
+          /><span class="visual-card-shade"></span
+          ><span class="visual-card-copy"
+            ><small>{{ i18n.t('LA VIE DE L’ÉQUIPE', 'LA VIDA DEL EQUIPO') }}</small
+            ><b>Instagram</b
+            ><span>{{ i18n.t('Photos & actualités', 'Fotos y noticias') }} <i>↗</i></span></span
+          ></a
+        >
+      </div>
+      <p class="image-credit">
+        {{
+          i18n.t(
+            'Photo du groupe et visuels d’illustration',
+            'Foto del equipo e imágenes ilustrativas'
+          )
+        }}
+      </p>
+    </section>
+  </div>
+</main>

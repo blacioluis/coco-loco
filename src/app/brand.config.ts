@@ -3,11 +3,35 @@ export const CLUB_BRAND = {
   division: 'D4C',
   logos: {
     selected: 'assets/club-official.png',
-    alternate: 'assets/club-coco.png'
+    alternate: 'assets/club-coco.png',
   },
   colors: {
-    light: { '--green': '#087a13', '--green-deep': '#07570d', '--lime': '#c4d96a', '--ink': '#242629', '--muted': '#68706a', '--line': '#e0e4de', '--surface': '#ffffff', '--surface-strong': '#f6f8f5', '--green-soft': '#eaf4e6', '--page': '#f8faf7', '--notice-bg': '#fbf8e8' },
-    dark: { '--green': '#88cf78', '--green-deep': '#6cba5e', '--lime': '#c4d96a', '--ink': '#f0f3ee', '--muted': '#a7afa7', '--line': '#353a37', '--surface': '#202421', '--surface-strong': '#191d1a', '--green-soft': '#28392a', '--page': '#161917', '--notice-bg': '#342f1f' }
+    light: {
+      '--green': '#087a13',
+      '--green-deep': '#07570d',
+      '--lime': '#c4d96a',
+      '--ink': '#242629',
+      '--muted': '#68706a',
+      '--line': '#e0e4de',
+      '--surface': '#ffffff',
+      '--surface-strong': '#f6f8f5',
+      '--green-soft': '#eaf4e6',
+      '--page': '#f8faf7',
+      '--notice-bg': '#fbf8e8',
+    },
+    dark: {
+      '--green': '#88cf78',
+      '--green-deep': '#6cba5e',
+      '--lime': '#c4d96a',
+      '--ink': '#f0f3ee',
+      '--muted': '#a7afa7',
+      '--line': '#353a37',
+      '--surface': '#202421',
+      '--surface-strong': '#191d1a',
+      '--green-soft': '#28392a',
+      '--page': '#161917',
+      '--notice-bg': '#342f1f',
+    },
   },
-  instagramUrl: 'https://www.instagram.com/forestoisc3/'
+  instagramUrl: 'https://www.instagram.com/forestoisc3/',
 } as const;

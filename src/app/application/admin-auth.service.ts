@@ -6,7 +6,9 @@ export class AdminAuthService {
   readonly checking = signal(true);
   readonly csrfToken = signal('');
 
-  constructor() { void this.restore(); }
+  constructor() {
+    void this.restore();
+  }
 
   async login(username: string, password: string): Promise<boolean> {
     try {
@@ -15,7 +17,7 @@ export class AdminAuthService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', username, password }),
       });
-      const result = await response.json() as { authenticated?: boolean; csrfToken?: string };
+      const result = (await response.json()) as { authenticated?: boolean; csrfToken?: string };
       this.apply(result);
       return response.ok && this.authenticated();
     } catch {
@@ -38,7 +40,10 @@ export class AdminAuthService {
 
   private async restore(): Promise<void> {
     try {
-      const response = await fetch(this.apiUrl, { cache: 'no-store', headers: { Accept: 'application/json' } });
+      const response = await fetch(this.apiUrl, {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
       this.apply(response.ok ? await response.json() : {});
     } catch {
       this.apply({});

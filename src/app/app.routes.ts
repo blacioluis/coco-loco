@@ -11,5 +11,5 @@ export const routes: Routes = [
   { path: 'reglement', component: RulesPage, title: 'Règlement · Forestois SC 1' },
   { path: 'joueurs/:id', component: PlayerPage, title: 'Profil · Forestois SC 1' },
   { path: 'admin', component: AdminPage, title: 'Espace club · Forestois SC 1' },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '' },
 ];

@@ -35,6 +35,7 @@ yarn-error.log
 .sass-cache/
 /connect.lock
 /coverage
+/public/api/data/database.private.php
 /libpeerconnection.log
 testem.log
 /typings

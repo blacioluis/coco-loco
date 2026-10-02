@@ -1,0 +1,74 @@
+<main class="page instagram-page">
+  <app-team-photo-header
+    [eyebrow]="i18n.t('AU QUOTIDIEN', 'DÍA A DÍA') + ' · FORESTOIS SC 1'"
+    [title]="i18n.t('La vie du club', 'La vida del club')"
+    [accent]="i18n.t('en images.', 'en imágenes.')"
+    [description]="
+      i18n.t('Le vestiaire, les matchs, le groupe.', 'El vestuario, los partidos, el grupo.')
+    "
+    [imageAlt]="i18n.t('Photo de l’équipe Forestois SC 1', 'Foto del equipo Forestois SC 1')"
+  />
+  <section class="instagram-profile">
+    <div class="instagram-profile-mark">◎</div>
+    <div>
+      <p class="eyebrow">INSTAGRAM</p>
+      <h2>&#64;forestoisc3</h2>
+      <p>
+        {{
+          i18n.t(
+            'Des potes, du foot et du Coco Loco. Retrouve la vie du groupe sur Instagram.',
+            'Amigos, fútbol y Coco Loco. Sigue la vida del grupo en Instagram.'
+          )
+        }}
+      </p>
+    </div>
+    <a class="button instagram-follow" [href]="instagramUrl" target="_blank" rel="noreferrer"
+      >{{ i18n.t('Ouvrir le profil', 'Abrir el perfil') }} ↗</a
+    >
+  </section>
+  <section class="instagram-feed-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">{{ i18n.t('PUBLICATIONS', 'PUBLICACIONES') }}</p>
+        <h2>{{ i18n.t('Quelques nouvelles du groupe.', 'Algunas noticias del grupo.') }}</h2>
+      </div>
+      <span class="instagram-live"
+        ><i></i>{{ i18n.t('Liens publics Instagram', 'Enlaces públicos de Instagram') }}</span
+      >
+    </div>
+    <div class="instagram-embeds">
+      @for (post of posts; track post.id) {
+        <article class="instagram-embed-card">
+          <div class="instagram-embed-top">
+            <span>{{ post.type === 'reel' ? '▶ REEL' : '▦ POST' }}</span
+            ><span>&#64;forestoisc3</span>
+          </div>
+          <a class="instagram-post-preview" [href]="post.permalink" target="_blank" rel="noreferrer"
+            ><img [src]="post.image" alt="" /><span
+              ><small>INSTAGRAM</small
+              ><b>{{
+                post.type === 'reel'
+                  ? i18n.t('Voir le Reel', 'Ver el Reel')
+                  : i18n.t('Voir la publication', 'Ver la publicación')
+              }}</b
+              ><i>↗</i></span
+            ></a
+          >
+        </article>
+      }
+    </div>
+    <div class="instagram-feed-foot">
+      <p>
+        {{
+          i18n.t(
+            'Cette sélection ouvre les publications originales. La récupération automatique des nouveaux posts sera activée avec l’API Meta, sans exposer de token dans le site.',
+            'Esta selección abre las publicaciones originales. La actualización automática se activará con la API de Meta, sin exponer ningún token en el sitio.'
+          )
+        }}
+      </p>
+      <a [href]="instagramUrl" target="_blank" rel="noreferrer"
+        >{{ i18n.t('Voir toutes les publications', 'Ver todas las publicaciones') }} →</a
+      >
+    </div>
+  </section>
+</main>

@@ -9,17 +9,34 @@ export class ClubFacade {
   private readonly snapshot = this.repository.getSnapshot();
   private readonly now = signal(Date.now());
   readonly members = signal(this.snapshot.members);
-  readonly activeMembers = computed(() => this.members().filter((member) => member.active !== false));
-  readonly fixtures = signal([...this.snapshot.fixtures].sort((a, b) => fixtureStartTime(a) - fixtureStartTime(b)));
+  readonly activeMembers = computed(() =>
+    this.members().filter((member) => member.active !== false),
+  );
+  readonly fixtures = signal(
+    [...this.snapshot.fixtures].sort((a, b) => fixtureStartTime(a) - fixtureStartTime(b)),
+  );
   readonly fixturesUpdatedAt = signal(this.snapshot.fixturesUpdatedAt);
   readonly standings = signal(this.snapshot.standings);
   readonly standingsUpdatedAt = signal(this.snapshot.standingsUpdatedAt);
-  readonly forestoisStanding = computed(() => this.standings().find((row) => row.teamId === '152_1_forestois_sc'));
-  readonly staff = computed(() => this.activeMembers().filter((member) => member.isCoach || ['Coach', 'Responsable d’équipe', 'Assistant'].includes(member.role)));
-  readonly players = computed(() => this.activeMembers().filter((member) => ['Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Joueur'].includes(member.role)));
+  readonly forestoisStanding = computed(() =>
+    this.standings().find((row) => row.teamId === '152_1_forestois_sc'),
+  );
+  readonly staff = computed(() =>
+    this.activeMembers().filter(
+      (member) =>
+        member.isCoach || ['Coach', 'Responsable d’équipe', 'Assistant'].includes(member.role),
+    ),
+  );
+  readonly players = computed(() =>
+    this.activeMembers().filter((member) =>
+      ['Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Joueur'].includes(member.role),
+    ),
+  );
   readonly nextFixture = computed(() => {
     const now = this.now();
-    return this.fixtures().find((fixture) => fixture.status === 'scheduled' && fixtureEndTime(fixture) >= now);
+    return this.fixtures().find(
+      (fixture) => fixture.status === 'scheduled' && fixtureEndTime(fixture) >= now,
+    );
   });
 
   constructor() {
@@ -40,35 +57,78 @@ export class ClubFacade {
     this.standingsUpdatedAt.set(data.updatedAt);
   }
 
-  private async refreshMembers(): Promise<void> {
+  async refreshMembers(): Promise<void> {
     const members = await this.repository.loadMembers();
     if (members) this.persist(members);
   }
 
-  async addMember(name: string, role: TeamRole, positions: string[], csrfToken: string, number?: number, photoDataUrl?: string): Promise<boolean> {
+  async addMember(
+    name: string,
+    role: TeamRole,
+    positions: string[],
+    csrfToken: string,
+    number?: number,
+    email?: string,
+    photoDataUrl?: string,
+  ): Promise<boolean> {
     const cleanName = name.trim();
     if (!cleanName) return false;
-    const member: ClubMember = { id: crypto.randomUUID(), name: cleanName, role, active: true, positions: normalizePositions(positions), ...(number ? { number } : {}), ...(photoDataUrl ? { photoDataUrl } : {}) };
+    const member: ClubMember = {
+      id: crypto.randomUUID(),
+      name: cleanName,
+      role,
+      active: true,
+      positions: normalizePositions(positions),
+      ...(number ? { number } : {}),
+      ...(email?.trim() ? { email: email.trim() } : {}),
+      ...(photoDataUrl ? { photoDataUrl } : {}),
+    };
     return this.saveMember(member, csrfToken);
   }
 
-  async updateMemberPhoto(id: string, photoDataUrl: string | null, csrfToken: string): Promise<boolean> {
+  async updateMemberPhoto(
+    id: string,
+    photoDataUrl: string | null,
+    csrfToken: string,
+  ): Promise<boolean> {
     const member = this.members().find((item) => item.id === id);
     if (!member) return false;
     const { photoDataUrl: _oldPhoto, ...withoutPhoto } = member;
-    return this.saveMember(photoDataUrl ? { ...withoutPhoto, photoDataUrl } : withoutPhoto, csrfToken);
+    return this.saveMember(
+      photoDataUrl ? { ...withoutPhoto, photoDataUrl } : withoutPhoto,
+      csrfToken,
+    );
   }
 
-  async updateMemberPositions(id: string, positions: string[], csrfToken: string): Promise<boolean> {
+  async updateMemberPositions(
+    id: string,
+    positions: string[],
+    csrfToken: string,
+  ): Promise<boolean> {
     const member = this.members().find((item) => item.id === id);
-    return member ? this.saveMember({ ...member, positions: normalizePositions(positions) }, csrfToken) : false;
+    return member
+      ? this.saveMember({ ...member, positions: normalizePositions(positions) }, csrfToken)
+      : false;
   }
 
-  async updateMemberDetails(id: string, details: Pick<ClubMember, 'name' | 'role' | 'number'>, csrfToken: string): Promise<boolean> {
+  async updateMemberDetails(
+    id: string,
+    details: Pick<ClubMember, 'name' | 'role' | 'number' | 'email'>,
+    csrfToken: string,
+  ): Promise<boolean> {
     const member = this.members().find((item) => item.id === id);
     if (!member || !details.name.trim()) return false;
-    const { number: _oldNumber, ...withoutNumber } = member;
-    return this.saveMember({ ...withoutNumber, name: details.name.trim(), role: details.role, ...(details.number ? { number: details.number } : {}) }, csrfToken);
+    const { number: _oldNumber, email: _oldEmail, ...withoutEditable } = member;
+    return this.saveMember(
+      {
+        ...withoutEditable,
+        name: details.name.trim(),
+        role: details.role,
+        ...(details.number ? { number: details.number } : {}),
+        ...(details.email?.trim() ? { email: details.email.trim() } : {}),
+      },
+      csrfToken,
+    );
   }
 
   async removeMember(id: string, csrfToken: string): Promise<boolean> {
@@ -87,7 +147,11 @@ export class ClubFacade {
     if (!saved) return false;
     const members = this.members();
     const index = members.findIndex((item) => item.id === saved.id);
-    this.persist(index < 0 ? [...members, saved] : members.map((item) => item.id === saved.id ? saved : item));
+    this.persist(
+      index < 0
+        ? [...members, saved]
+        : members.map((item) => (item.id === saved.id ? saved : item)),
+    );
     return true;
   }
 
@@ -109,7 +173,16 @@ function fixtureStartTime(fixture: Fixture): number {
   return new Date(year, month - 1, day, hours, minutes).getTime();
 }
 
-export const TEAM_ROLES: TeamRole[] = ['Coach', 'Responsable d’équipe', 'Assistant', 'Gardien', 'Défenseur', 'Milieu', 'Attaquant', 'Joueur'];
+export const TEAM_ROLES: TeamRole[] = [
+  'Coach',
+  'Responsable d’équipe',
+  'Assistant',
+  'Gardien',
+  'Défenseur',
+  'Milieu',
+  'Attaquant',
+  'Joueur',
+];
 
 function normalizePositions(positions: string[]): string[] {
   return [...new Set(positions.map((item) => item.trim()).filter(Boolean))].slice(0, 6);

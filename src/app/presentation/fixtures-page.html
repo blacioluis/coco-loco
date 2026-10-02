@@ -1,0 +1,253 @@
+<main class="page">
+  <header class="section-hero match-hero">
+    <img class="section-hero-bg" src="assets/hero-pitch.png" alt="" />
+    <div>
+      <p class="eyebrow">{{ i18n.t('SAISON', 'TEMPORADA') }} 2026 / 2027 · D4C</p>
+      <h1>
+        {{ i18n.t('Le calendrier', 'El calendario') }}
+        <em>{{ i18n.t('des matchs.', 'de partidos.') }}</em>
+      </h1>
+      <p class="lede">
+        {{
+          i18n.t(
+            'Tous les rendez-vous de Forestois SC 1, avec l’heure et l’adresse du terrain.',
+            'Todos los partidos del Forestois SC 1, con la hora y la dirección del campo.'
+          )
+        }}
+      </p>
+    </div>
+  </header>
+  @if (club.nextFixture(); as next) {
+    <section class="upcoming-match">
+      <div class="upcoming-label">
+        <span class="live-dot"></span> {{ i18n.t('MATCH À VENIR', 'PRÓXIMO PARTIDO') }}
+        <b>{{ i18n.t('JOURNÉE', 'JORNADA') }} {{ next.round }}</b>
+      </div>
+      <div class="upcoming-main">
+        <div>
+          <h2>
+            {{ next.home ? 'FORESTOIS SC 1' : next.opponent }} <i>·</i>
+            {{ next.home ? next.opponent : 'FORESTOIS SC 1' }}
+          </h2>
+          <p>
+            {{ next.date | date: 'EEEE d MMMM yyyy' : '' : i18n.locale() }} ·
+            {{ i18n.t('Coup d’envoi à', 'Inicio a las') }} {{ next.time }}
+          </p>
+        </div>
+        <span class="upcoming-date"
+          ><b>{{ next.date | date: 'd' : '' : i18n.locale() }}</b
+          ><small>{{ next.date | date: 'MMM' : '' : i18n.locale() }}</small></span
+        >
+      </div>
+      <div class="upcoming-opponents">
+        <div>
+          <app-team-avatar
+            [name]="next.home ? 'FORESTOIS SC 1' : next.opponent"
+            [own]="next.home"
+          /><b>{{ next.home ? 'FORESTOIS SC 1' : next.opponent }}</b>
+        </div>
+        <span>VS</span>
+        <div>
+          <app-team-avatar
+            [name]="next.home ? next.opponent : 'FORESTOIS SC 1'"
+            [own]="!next.home"
+          /><b>{{ next.home ? next.opponent : 'FORESTOIS SC 1' }}</b>
+        </div>
+      </div>
+      <div class="upcoming-place">
+        <span>⌖</span>
+        <div>
+          <b>{{ next.venue }}</b
+          ><small>{{ next.address }}</small>
+        </div>
+        <a
+          [href]="
+            'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(next.address)
+          "
+          target="_blank"
+          rel="noreferrer"
+          >{{ i18n.t('Itinéraire', 'Cómo llegar') }} ↗</a
+        >
+      </div>
+      @if (duties.forFixture(next.round, next.date); as duty) {
+        <app-match-duty-card [duty]="duty" />
+      }
+    </section>
+  } @else {
+    <section class="upcoming-match">
+      <div class="upcoming-label">
+        {{ i18n.t('CALENDRIER À METTRE À JOUR', 'CALENDARIO PENDIENTE DE ACTUALIZACIÓN') }}
+      </div>
+      <p>
+        {{
+          i18n.t(
+            'Aucun prochain match n’est actuellement publié.',
+            'No hay ningún próximo partido publicado.'
+          )
+        }}
+      </p>
+    </section>
+  }
+  <section class="training-card">
+    <div class="training-icon">↗</div>
+    <div>
+      <p class="eyebrow">{{ i18n.t('RENDEZ-VOUS HEBDOMADAIRE', 'CITA SEMANAL') }}</p>
+      <h2>{{ i18n.t('Entraînement chaque mardi', 'Entrenamiento cada martes') }}</h2>
+      <p>
+        {{ i18n.t('Rendez-vous à', 'Encuentro a las') }} <b>19 h 45</b> ·
+        {{ i18n.t('début de l’entraînement à', 'inicio del entrenamiento a las') }} <b>20 h</b>
+      </p>
+    </div>
+    <div class="training-venue">
+      <b>Complexe Sportif du Bempt</b><span>Av. de la 2ème Armée Britannique, 1190 Forest</span
+      ><a
+        href="https://www.google.com/maps/search/?api=1&query=Complexe+Sportif+du+Bempt+Forest+Belgique"
+        target="_blank"
+        rel="noreferrer"
+        >{{ i18n.t('Voir le terrain', 'Ver el campo') }} ↗</a
+      >
+    </div>
+  </section>
+  <section class="calendar-toolbar" aria-label="Filtres du calendrier">
+    <div>
+      <strong>{{ filteredFixtures.length }}</strong
+      ><span>{{ i18n.t('matchs au calendrier', 'partidos en el calendario') }}</span>
+    </div>
+    <div class="calendar-filters">
+      <button type="button" [class.selected]="filter === 'all'" (click)="filter = 'all'">
+        {{ i18n.t('Tous', 'Todos') }}</button
+      ><button type="button" [class.selected]="filter === 'home'" (click)="filter = 'home'">
+        {{ i18n.t('À domicile', 'En casa') }}</button
+      ><button type="button" [class.selected]="filter === 'away'" (click)="filter = 'away'">
+        {{ i18n.t('À l’extérieur', 'Fuera') }}
+      </button>
+    </div>
+  </section>
+  @if (filteredFixtures.length) {
+    <div class="fixture-list">
+      @for (fixture of filteredFixtures; track fixture.round) {
+        <article class="fixture-card">
+          <div class="fixture-date">
+            <b>{{ fixture.date | date: 'd' : '' : i18n.locale() }}</b
+            ><span>{{ fixture.date | date: 'MMM' : '' : i18n.locale() }}</span>
+          </div>
+          <div class="fixture-info">
+            <div class="fixture-meta">
+              {{ i18n.t('JOURNÉE', 'JORNADA') }} {{ fixture.round }}
+              <span class="venue-tag">{{
+                fixture.home ? i18n.t('DOMICILE', 'EN CASA') : i18n.t('EXTÉRIEUR', 'FUERA')
+              }}</span>
+              @if (fixture.status === 'played') {
+                <span class="result-tag">{{ i18n.t('TERMINÉ', 'FINALIZADO') }}</span>
+              }
+            </div>
+            <div class="fixture-clubs">
+              <span
+                ><app-team-avatar
+                  [compact]="true"
+                  [name]="fixture.home ? 'FORESTOIS SC 1' : fixture.opponent"
+                  [own]="fixture.home"
+                /><b>{{ fixture.home ? 'FORESTOIS SC 1' : fixture.opponent }}</b></span
+              ><i>·</i
+              ><span
+                ><app-team-avatar
+                  [compact]="true"
+                  [name]="fixture.home ? fixture.opponent : 'FORESTOIS SC 1'"
+                  [own]="!fixture.home"
+                /><b>{{ fixture.home ? fixture.opponent : 'FORESTOIS SC 1' }}</b></span
+              >
+            </div>
+            <p>{{ fixture.venue }} · {{ fixture.address }}</p>
+          </div>
+          <div class="fixture-time">
+            @if (fixture.status === 'played') {
+              <strong class="fixture-score">{{ fixture.homeScore }}–{{ fixture.awayScore }}</strong
+              ><small>{{ fixture.time }}</small>
+            } @else {
+              {{ fixture.time }}
+            }
+            <a
+              [href]="
+                'https://www.google.com/maps/search/?api=1&query=' +
+                encodeURIComponent(fixture.address)
+              "
+              target="_blank"
+              rel="noreferrer"
+              [attr.aria-label]="i18n.t('Ouvrir l’itinéraire', 'Abrir la ruta')"
+              >↗</a
+            >
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <div class="calendar-empty">
+      Aucun match dans cette sélection. Choisis « Tous » pour afficher le calendrier complet.
+    </div>
+  }
+  @if (dutyHistory.length) {
+    <section class="duty-history">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">{{ i18n.t('ROTATION DU VESTIAIRE', 'ROTACIÓN DEL VESTUARIO') }}</p>
+          <h2>{{ i18n.t('Qui a fait quoi ?', '¿Quién hizo qué?') }}</h2>
+          <p>
+            {{
+              i18n.t(
+                'Une trace par match pour répartir les responsabilités équitablement.',
+                'Un registro por partido para repartir las responsabilidades de forma justa.'
+              )
+            }}
+          </p>
+        </div>
+        <span class="count-tag">{{ dutyHistory.length }}</span>
+      </div>
+      <div class="duty-history-list">
+        @for (item of dutyHistory; track item.duty.fixtureDate + '-' + item.duty.round) {
+          <article>
+            <time
+              ><b>{{ item.duty.fixtureDate | date: 'd' : '' : i18n.locale() }}</b
+              ><span>{{ item.duty.fixtureDate | date: 'MMM' : '' : i18n.locale() }}</span></time
+            >
+            <div class="duty-history-match">
+              <small>{{ i18n.t('JOURNÉE', 'JORNADA') }} {{ item.duty.round }}</small
+              ><b>{{ item.opponent }}</b>
+              @if (item.duty.proof; as proof) {
+                <em
+                  >{{
+                    proof.type === 'draw' ? i18n.t('TIRAGE', 'SORTEO') : i18n.t('MANUEL', 'MANUAL')
+                  }}
+                  #{{ proof.drawId }}</em
+                >
+              }
+            </div>
+            <div class="duty-history-roles">
+              <span class="kits"
+                ><i>♟</i><small>{{ i18n.t('MAILLOTS', 'EQUIPACIONES') }}</small
+                ><b>{{ dutyName(item.duty.kitsMemberId, item.duty.kitsMemberName) }}</b></span
+              ><span class="drinks"
+                ><i>✦</i><small>{{ i18n.t('BOISSONS', 'BEBIDAS') }}</small
+                ><b>{{ dutyName(item.duty.drinksMemberId, item.duty.drinksMemberName) }}</b></span
+              >
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+  <app-standings-table />
+  <p class="source-note">
+    {{ i18n.t('Données mises à jour le', 'Datos actualizados el') }}
+    {{ club.fixturesUpdatedAt() | date: 'd MMMM yyyy' : '' : i18n.locale() }}
+    {{ i18n.t('depuis', 'desde') }}
+    <a href="https://www.calabssa.be/c/152_1_forestois_sc/" target="_blank" rel="noreferrer"
+      >CalABSSA ↗</a
+    >.
+    {{
+      i18n.t(
+        'Les dates, horaires et terrains peuvent évoluer.',
+        'Las fechas, horarios y campos pueden cambiar.'
+      )
+    }}
+  </p>
+</main>

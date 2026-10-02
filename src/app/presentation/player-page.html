@@ -1,0 +1,75 @@
+<main class="page">
+  <a routerLink="/equipe" class="back-link"
+    >← {{ i18n.t('Retour à l’équipe', 'Volver al equipo') }}</a
+  >
+  @if (member; as person) {
+    <header class="profile-head">
+      @if (person.photoDataUrl) {
+        <img class="profile-photo" [src]="person.photoDataUrl" [alt]="person.name" />
+      } @else {
+        <span class="profile-number">{{ person.number ?? 'SCF' }}</span>
+      }
+      <div>
+        <p class="eyebrow">
+          {{
+            person.sourceRole === 'Joueur-coach'
+              ? i18n.t('Joueur-coach', 'Jugador-entrenador')
+              : i18n.role(person.role)
+          }}
+          · FORESTOIS SC 1
+        </p>
+        <h1>{{ person.name }}</h1>
+        <p class="lede">
+          {{
+            person.bio || i18n.t('Profil en cours de création.', 'Perfil en proceso de creación.')
+          }}
+        </p>
+      </div>
+    </header>
+    <div class="profile-details">
+      <span>{{ i18n.t('POSTES', 'POSICIONES') }}</span
+      ><b class="position-tags">
+        @for (position of memberPositions(person); track position) {
+          <i>{{ i18n.position(position) }}</i>
+        } @empty {
+          <i>{{ i18n.role(person.role) }}</i>
+        }
+      </b>
+    </div>
+    @if (person.phone || person.email) {
+      <div class="profile-contact">
+        @if (person.phone) {
+          <a [href]="'tel:' + person.phone.replaceAll(' ', '')"
+            ><small>{{ i18n.t('TÉLÉPHONE', 'TELÉFONO') }}</small
+            ><b>{{ person.phone }}</b></a
+          >
+        }
+        @if (person.email) {
+          <a [href]="'mailto:' + person.email"
+            ><small>E-MAIL</small><b>{{ person.email }}</b></a
+          >
+        }
+        @if (person.sourceUrl) {
+          <a [href]="person.sourceUrl" target="_blank" rel="noreferrer"
+            ><small>{{ i18n.t('SOURCE', 'FUENTE') }}</small
+            ><b>CalABSSA ↗</b></a
+          >
+        }
+      </div>
+    }
+  } @else {
+    <section class="empty-state">
+      <span>SCF</span>
+      <h1>{{ i18n.t('Profil introuvable', 'Perfil no encontrado') }}</h1>
+      <p>
+        {{
+          i18n.t(
+            'Ce membre a peut-être été retiré de l’effectif.',
+            'Es posible que este miembro haya sido retirado de la plantilla.'
+          )
+        }}
+      </p>
+      <a routerLink="/equipe" class="button">{{ i18n.t('Voir l’équipe', 'Ver el equipo') }}</a>
+    </section>
+  }
+</main>

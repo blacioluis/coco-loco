@@ -1,0 +1,7 @@
+<span class="team-avatar" [class.compact]="compact" [class.own-team]="own">
+  @if (own) {
+    <img src="assets/club-coco.png" alt="Blason Coco Loco de Forestois SC 1" />
+  } @else {
+    <span aria-hidden="true">{{ initials(name) }}</span>
+  }
+</span>

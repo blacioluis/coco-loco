@@ -7,26 +7,8 @@ import { I18nService } from '../application/i18n.service';
   selector: 'app-standings-table',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <section class="league-table-section">
-      <header class="league-table-head">
-        <div><p class="eyebrow">ABSSA · DIVISION 4C</p><h2>{{ i18n.t('Le classement', 'La clasificación') }}</h2><p>{{ i18n.t('Le classement officiel, actualisé automatiquement.', 'La clasificación oficial, actualizada automáticamente.') }}</p></div>
-        <div class="league-update"><span>{{ i18n.t('MIS À JOUR', 'ACTUALIZADO') }}</span><b>{{ club.standingsUpdatedAt() | date:'d MMM yyyy':'':i18n.locale() }}</b></div>
-      </header>
-      <div class="league-table-wrap">
-        <table class="league-table">
-          <thead><tr><th>#</th><th>{{ i18n.t('Équipe', 'Equipo') }}</th><th>J</th><th>V</th><th>N</th><th>D</th><th>BP</th><th>BC</th><th>+/-</th><th>Pts</th></tr></thead>
-          <tbody>@for (row of club.standings(); track row.teamId; let rank = $index) {
-            <tr [class.is-forestois]="row.teamId === '152_1_forestois_sc'">
-              <td class="league-rank">{{ rank + 1 }}</td>
-              <td class="league-team"><div class="league-team-inner">@if (row.teamId === '152_1_forestois_sc') { <img src="assets/club-coco.png" alt=""><span><b>FORESTOIS SC 1</b><small>{{ i18n.t('Notre équipe', 'Nuestro equipo') }}</small></span> } @else { <span><b>{{ row.name }}</b></span> }</div></td>
-              <td>{{ row.played }}</td><td>{{ row.wins }}</td><td>{{ row.draws }}</td><td>{{ row.losses }}</td><td>{{ row.goalsFor }}</td><td>{{ row.goalsAgainst }}</td><td [class.positive]="row.goalDifference > 0">{{ row.goalDifference > 0 ? '+' : '' }}{{ row.goalDifference }}</td><td class="league-points">{{ row.points }}</td>
-            </tr>
-          }</tbody>
-        </table>
-      </div>
-      <a class="league-source" href="https://www.calabssa.be/c/152_1_forestois_sc/" target="_blank" rel="noreferrer">{{ i18n.t('Classement officiel CalABSSA', 'Clasificación oficial CalABSSA') }} ↗</a>
-    </section>`
+  templateUrl: './standings-table.component.html',
+  styleUrl: './standings-table.component.scss',
 })
 export class StandingsTableComponent {
   readonly club = inject(ClubFacade);

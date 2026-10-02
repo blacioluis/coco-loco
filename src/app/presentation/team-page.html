@@ -1,0 +1,92 @@
+<main class="page">
+  <app-team-photo-header
+    eyebrow="FORESTOIS SC 1 · D4C"
+    [title]="i18n.t('Le groupe', 'El grupo')"
+    accent="Forestois."
+    [description]="
+      i18n.t(
+        'Le staff et les joueurs, au cœur du club.',
+        'El cuerpo técnico y los jugadores, en el corazón del club.'
+      )
+    "
+    [imageAlt]="i18n.t('Photo de l’équipe Forestois SC 1', 'Foto del equipo Forestois SC 1')"
+    [metricValue]="club.players().length.toString()"
+    [metricLabel]="i18n.t('joueurs', 'jugadores')"
+  />
+  <section class="squad-section">
+    <div class="squad-heading">
+      <div>
+        <p class="eyebrow">{{ i18n.t('LE VESTIAIRE', 'EL VESTUARIO') }}</p>
+        <h2>{{ i18n.t('Une équipe. Tous les profils.', 'Un equipo. Todos los perfiles.') }}</h2>
+        <p>
+          {{
+            i18n.t(
+              'Clique sur une fiche pour découvrir le profil du joueur.',
+              'Abre una ficha para descubrir el perfil del jugador.'
+            )
+          }}
+        </p>
+      </div>
+      <div class="squad-total">
+        <strong>{{ club.players().length }}</strong
+        ><span>{{ i18n.t('joueurs', 'jugadores') }}</span>
+      </div>
+    </div>
+    <div class="player-grid">
+      @for (person of sortedPlayers; track person.id) {
+        <article class="player-card">
+          <a class="player-card-main" [routerLink]="['/joueurs', person.id]">
+            @if (person.photoDataUrl) {
+              <img class="player-card-photo" [src]="person.photoDataUrl" [alt]="person.name" />
+            } @else {
+              <span class="player-card-monogram">{{ initials(person.name) }}</span>
+            }
+            @if (person.number) {
+              <span class="shirt-number">{{ person.number }}</span>
+            }
+            <span class="player-card-copy">
+              @if (person.isCoach) {
+                <small class="coach-chip">{{ i18n.t('JOUEUR-COACH', 'JUGADOR-ENTRENADOR') }}</small>
+              } @else {
+                <small>FORESTOIS SC 1</small>
+              }
+              <b>{{ person.name }}</b
+              ><span class="position-tags">
+                @for (position of memberPositions(person); track position) {
+                  <i>{{ i18n.position(position) }}</i>
+                } @empty {
+                  <i>{{ i18n.t('Poste à confirmer', 'Posición por confirmar') }}</i>
+                }
+              </span></span
+            ></a
+          ><a
+            class="profile-goto"
+            [routerLink]="['/joueurs', person.id]"
+            [attr.aria-label]="i18n.t('Voir le profil de ', 'Ver el perfil de ') + person.name"
+            ><span>{{ i18n.t('Voir le profil', 'Ver perfil') }}</span
+            ><b>→</b></a
+          >
+        </article>
+      }
+    </div>
+  </section>
+  <section class="staff-band">
+    <div>
+      <p class="eyebrow">{{ i18n.t('ENCADREMENT', 'CUERPO TÉCNICO') }}</p>
+      <h2>{{ i18n.t('Les joueurs-coachs', 'Los jugadores-entrenadores') }}</h2>
+    </div>
+    <div class="staff-band-list">
+      @for (person of club.staff(); track person.id) {
+        <a [routerLink]="['/joueurs', person.id]">
+          @if (person.photoDataUrl) {
+            <img class="member-avatar" [src]="person.photoDataUrl" alt="" />
+          } @else {
+            <span>{{ initials(person.name) }}</span>
+          }
+          <b>{{ person.name }}</b
+          ><i>↗</i></a
+        >
+      }
+    </div>
+  </section>
+</main>

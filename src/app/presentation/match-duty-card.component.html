@@ -1,0 +1,94 @@
+<aside class="match-duty-strip" aria-label="Responsabilités du vestiaire">
+  <div class="duty-heading">
+    <span>{{ i18n.t('VESTIAIRE', 'VESTUARIO') }}</span
+    ><small>{{ i18n.t('Les responsables de ce match', 'Responsables de este partido') }}</small>
+  </div>
+  <div class="duty-person duty-kits">
+    <span class="duty-icon" aria-hidden="true"
+      ><svg viewBox="0 0 24 24">
+        <path
+          d="M8.2 4 4.5 6.1 2.8 10l3.1 1.5L7 9.8V20h10V9.8l1.1 1.7 3.1-1.5-1.7-3.9L15.8 4c-.7 1.3-2 2-3.8 2s-3.1-.7-3.8-2Z"
+        /></svg
+    ></span>
+    <span
+      ><small>{{ i18n.t('MAILLOTS', 'EQUIPACIONES') }}</small
+      ><b>{{ displayName(duty.kitsMemberId, duty.kitsMemberName) }}</b></span
+    >
+  </div>
+  <div class="duty-person duty-drinks">
+    <span class="duty-icon" aria-hidden="true"
+      ><svg viewBox="0 0 24 24">
+        <path
+          d="M8 3h8v3l-1 1v2.2c1.8 1.1 3 3.1 3 5.3V21H6v-6.5c0-2.2 1.2-4.2 3-5.3V7L8 6V3Zm2 2v1h4V5h-4Zm1 3v2.5l-.8.4A4 4 0 0 0 8 14.5V19h8v-4.5a4 4 0 0 0-2.2-3.6l-.8-.4V8h-2Z"
+        /></svg
+    ></span>
+    <span
+      ><small>{{ i18n.t('BOISSONS FRAÎCHES', 'BEBIDAS FRÍAS') }}</small
+      ><b>{{ displayName(duty.drinksMemberId, duty.drinksMemberName) }}</b></span
+    >
+  </div>
+  @if (duty.proof; as proof) {
+    <details class="duty-proof">
+      <summary>
+        <span>{{
+          proof.type === 'draw'
+            ? i18n.t('Tirage vérifiable', 'Sorteo verificable')
+            : i18n.t('Assignation manuelle', 'Asignación manual')
+        }}</span
+        ><b>#{{ proof.drawId }}</b>
+      </summary>
+      <div>
+        <p>
+          {{ i18n.t('Enregistré le', 'Registrado el') }}
+          {{ proof.performedAt | date: 'd MMM yyyy, HH:mm' : '' : i18n.locale() }}
+        </p>
+        @if (proof.eligibleMembers?.length) {
+          <p>
+            <strong>{{ i18n.t('Joueurs éligibles', 'Jugadores elegibles') }} :</strong>
+            {{ eligibleNames }}
+          </p>
+        }
+        @if (proof.hash) {
+          <p>
+            <strong>{{ i18n.t('Empreinte', 'Huella') }} :</strong> <code>{{ proof.hash }}</code>
+          </p>
+        }
+        @if (proof.seed) {
+          <p>
+            <strong>Seed :</strong> <code>{{ proof.seed }}</code>
+          </p>
+        }
+        <p>
+          <strong>{{ i18n.t('Méthode', 'Método') }} :</strong> {{ proof.algorithm }}
+        </p>
+        @if (proof.type === 'draw') {
+          <button
+            class="verify-draw-button"
+            type="button"
+            (click)="verifyProof()"
+            [disabled]="verifying"
+          >
+            {{
+              verifying
+                ? i18n.t('Vérification…', 'Verificando…')
+                : i18n.t('Vérifier la preuve', 'Verificar la prueba')
+            }}
+          </button>
+          @if (verificationState) {
+            <span class="draw-verification" [class.invalid]="verificationState === 'invalid'">{{
+              verificationState === 'valid'
+                ? i18n.t(
+                    '✓ Preuve cohérente : le résultat correspond aux données publiées.',
+                    '✓ Prueba coherente: el resultado coincide con los datos publicados.'
+                  )
+                : i18n.t(
+                    '⚠ La preuve ne correspond pas au résultat affiché.',
+                    '⚠ La prueba no coincide con el resultado mostrado.'
+                  )
+            }}</span>
+          }
+        }
+      </div>
+    </details>
+  }
+</aside>

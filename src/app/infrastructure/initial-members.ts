@@ -19,7 +19,13 @@ export const INITIAL_MEMBERS: ClubMember[] = [
   member('luis-blacio', 'Luis Blacio', 'Défenseur', 2, 'Défenseur'),
   member('bryan-castillo', 'Bryan Castillo', 'Attaquant', 11, 'Attaquant'),
   member('marlon-cedeno', 'Marlon Cedeno', 'Milieu', 10, 'Milieu'),
-  member('tito-jhovanny-cedeno-astudillo', 'Tito Jhovanny Cedeño Astudillo', 'Milieu', 15, 'Milieu offensif'),
+  member(
+    'tito-jhovanny-cedeno-astudillo',
+    'Tito Jhovanny Cedeño Astudillo',
+    'Milieu',
+    15,
+    'Milieu offensif',
+  ),
   member('carlos-collaguazo', 'Carlos Collaguazo', 'Joueur'),
   member('tybo-croquefer', 'Tybo Croquefer', 'Joueur'),
   member('francisco-diaz', 'Francisco Diaz', 'Milieu', 10, 'Milieu offensif'),
@@ -45,7 +51,14 @@ export const INITIAL_MEMBERS: ClubMember[] = [
   member('nasr-eddine-zabata', 'Nasr-Eddine Zabata', 'Joueur'),
 ];
 
-function member(id: string, name: string, role: ClubMember['role'], number?: number, position?: string, isCoach = false): ClubMember {
+function member(
+  id: string,
+  name: string,
+  role: ClubMember['role'],
+  number?: number,
+  position?: string,
+  isCoach = false,
+): ClubMember {
   return {
     id,
     name,
